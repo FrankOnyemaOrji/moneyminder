@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Account{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-header">
+        <h1>Edit Account</h1>
+        <div class="header-actions">
+            <a href="{{ url_for('accounts.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Accounts
+            </a>
+            <a href="{{ url_for('accounts.view', account_id=account.id) }}" class="btn btn-info">
+                <i class="fas fa-chart-line"></i> View Transactions
+            </a>
+        </div>
+    </div>
+
+    <form class="form" method="post" novalidate>
+        {{ form.hidden_tag() }}
+
+        <div class="form-grid">
+            <div class="form-group">
+                {{ form.name.label }}
+                {{ form.name(class="form-control") }}
+                {% for error in form.name.errors %}
+                    <span class="error">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                {{ form.account_type.label }}
+                {{ form.account_type(class="form-control") }}
+                {% for error in form.account_type.errors %}
+                    <span class="error">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                {{ form.currency.label }}
+                {{ form.currency(class="form-control") }}
+                {% for error in form.currency.errors %}
+                    <span class="error">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                {{ form.current_balance.label }}
+                <div class="input-group">
+                    <span class="input-group-text">{{ account.currency }}</span>
+                    {{ form.current_balance(class="form-control", disabled=true) }}
+                </div>
+            </div>
+
+            <div class="form-group full-width">
+                {{ form.description.label }}
+                {{ form.description(class="form-control") }}
+                {% for error in form.description.errors %}
+                    <span class="error">{{ error }}</span>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="account-summary">
+            <h3>Account Summary</h3>
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <span class="label">Account Created</span>
+                    <span class="value">{{ moment(account.created_at).format('LL') }}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="label">Last Updated</span>
+                    <span class="value">{{ moment(account.updated_at).fromNow() }}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="label">Transaction Count</span>
+                    <span class="value">{{ account.transactions.count() }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ url_for('accounts.delete', account_id=account.id) }}" class="btn btn-danger">Delete Account</a>
+            <div class="action-group">
+                <a href="{{ url_for('accounts.index') }}" class="btn btn-secondary">Cancel</a>
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle account type changes
+    const accountTypeSelect = document.getElementById('account_type');
+    const currencySelect = document.getElementById('currency');
+
+    // Confirm before changing currency
+    currencySelect.addEventListener('change', function() {
+        const newCurrency = this.value;
+        const oldCurrency = '{{ account.currency }}';
+
+        if (newCurrency !== oldCurrency) {
+            if (!confirm('Changing the currency may affect your transaction history. Are you sure you want to continue?')) {
+                this.value = oldCurrency;
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

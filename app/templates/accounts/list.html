@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Accounts{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/accounts.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="accounts-container">
+    <div class="accounts-header">
+        <div class="header-content">
+            <h1>Accounts</h1>
+            <div class="total-balance">
+                <span class="label">Total Balance</span>
+                <span class="amount">{{ "${:,.2f}".format(total_balance) }}</span>
+            </div>
+        </div>
+        <div class="header-actions">
+            <a href="{{ url_for('accounts.create') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> New Account
+            </a>
+        </div>
+    </div>
+
+    <div class="accounts-grid">
+        {% for account in accounts %}
+        <div class="account-card">
+            <div class="card-header">
+                <div class="account-type {{ account.account_type }}">
+                    <i class="fas fa-{{ account.account_type|account_icon }}"></i>
+                </div>
+                <div class="account-actions">
+                    <a href="{{ url_for('accounts.edit', account_id=account.id) }}" class="btn-icon" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <a href="{{ url_for('accounts.delete', account_id=account.id) }}" class="btn-icon" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <a href="{{ url_for('accounts.view', account_id=account.id) }}" class="account-name">
+                    {{ account.name }}
+                </a>
+                <div class="account-balance">
+                    {{ account.currency }} {{ "${:,.2f}".format(account.balance) }}
+                </div>
+
+                <div class="account-stats">
+                    <div class="stat">
+                        <span class="label">Monthly Income</span>
+                        <span class="value income">+{{ "${:,.2f}".format(account_stats[account.id]['monthly_income']) }}</span>
+                    </div>
+                    <div class="stat">
+                        <span class="label">Monthly Expenses</span>
+                        <span class="value expenses">-{{ "${:,.2f}".format(account_stats[account.id]['monthly_expenses']) }}</span>
+                    </div>
+                </div>
+
+                {% if account.description %}
+                <div class="account-description">
+                    {{ account.description }}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="card-footer">
+                <span class="transaction-count">
+                    {{ account_stats[account.id]['transaction_count'] }} transactions this month
+                </span>
+                <a href="{{ url_for('accounts.view', account_id=account.id) }}" class="view-details">
+                    View Details
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if not accounts %}
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <i class="fas fa-wallet"></i>
+        </div>
+        <h2>No Accounts Yet</h2>
+        <p>Start by adding your first account to track your finances.</p>
+        <a href="{{ url_for('accounts.create') }}" class="btn btn-primary">Add Account</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/accounts.js') }}"></script>
+{% endblock %}

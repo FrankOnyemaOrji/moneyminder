@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
+
+{% block content %}
+<div class="dashboard">
+    <!-- Welcome Section -->
+    <div class="welcome-section">
+        <h1>Welcome back, {{ current_user.username }}!</h1>
+        <p class="date">{{ moment().format('MMMM DD, YYYY') }}</p>
+    </div>
+
+    <!-- Financial Overview -->
+    <div class="dashboard-grid">
+        <!-- Balance Summary -->
+        <div class="dashboard-card summary-card">
+            <h2>Balance Summary</h2>
+            <div class="balance-amount">{{ "${:,.2f}".format(total_balance) }}</div>
+            <div class="account-list">
+                {% for account in accounts %}
+                <div class="account-item">
+                    <span class="account-name">{{ account.name }}</span>
+                    <span class="account-balance">{{ "${:,.2f}".format(account.balance) }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            <a href="{{ url_for('accounts.index') }}" class="card-link">Manage Accounts</a>
+        </div>
+
+        <!-- Monthly Overview -->
+        <div class="dashboard-card overview-card">
+            <h2>Monthly Overview</h2>
+            <div class="overview-grid">
+                <div class="overview-item income">
+                    <span class="label">Income</span>
+                    <span class="amount">{{ "${:,.2f}".format(total_income) }}</span>
+                </div>
+                <div class="overview-item expenses">
+                    <span class="label">Expenses</span>
+                    <span class="amount">{{ "${:,.2f}".format(total_expenses) }}</span>
+                </div>
+                <div class="overview-item savings">
+                    <span class="label">Net Savings</span>
+                    <span class="amount">{{ "${:,.2f}".format(total_income - total_expenses) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="dashboard-card transactions-card">
+            <h2>Recent Transactions</h2>
+            <div class="transaction-list">
+                {% for transaction in recent_transactions %}
+                <div class="transaction-item {{ transaction.transaction_type }}">
+                    <div class="transaction-info">
+                        <span class="transaction-date">{{ moment(transaction.date).format('MMM DD') }}</span>
+                        <span class="transaction-description">{{ transaction.description }}</span>
+                    </div>
+                    <span class="transaction-amount">
+                        {{ "+" if transaction.transaction_type == 'income' else "-" }}
+                        {{ "${:,.2f}".format(transaction.amount) }}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+            <a href="{{ url_for('transactions.index') }}" class="card-link">View All Transactions</a>
+        </div>
+
+        <!-- Budget Overview -->
+        <div class="dashboard-card budget-card">
+            <h2>Budget Overview</h2>
+            <div class="budget-progress">
+                <div class="total-budget">
+                    <span>Total Budget: {{ "${:,.2f}".format(total_budget) }}</span>
+                    <span>Spent: {{ "${:,.2f}".format(total_spent) }}</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress" style="width: {{ (total_spent / total_budget * 100) if total_budget > 0 else 0 }}%"></div>
+                </div>
+            </div>
+            <div class="budget-list">
+                {% for budget in budget_status %}
+                <div class="budget-item {{ 'exceeded' if budget.is_exceeded else '' }}">
+                    <div class="budget-info">
+                        <span class="budget-category">{{ budget.category }}</span>
+                        <span class="budget-amounts">
+                            {{ "${:,.2f}".format(budget.spent) }} / {{ "${:,.2f}".format(budget.amount) }}
+                        </span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress" style="width: {{ budget.percentage }}%"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <a href="{{ url_for('budgets.index') }}" class="card-link">Manage Budgets</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}
