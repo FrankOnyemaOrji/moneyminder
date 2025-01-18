@@ -1,3 +1,6 @@
+from collections import defaultdict
+from operator import or_
+
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
@@ -13,7 +16,7 @@ from app.forms.transaction import TransactionForm, TransactionFilterForm, BulkTr
 transactions = Blueprint('transactions', __name__)
 
 
-@transactions.route('/transactions')
+@transactions.route('/')
 @login_required
 def index():
     """List all transactions with filtering"""
@@ -65,7 +68,8 @@ def index():
                            form=form)
 
 
-@transactions.route('/transactions/create', methods=['GET', 'POST'])
+
+@transactions.route('/create', methods=['GET', 'POST'])
 @login_required
 def create():
     """Create a new transaction"""
@@ -128,7 +132,7 @@ def create():
     return render_template('transactions/create.html', form=form)
 
 
-@transactions.route('/transactions/<transaction_id>/edit', methods=['GET', 'POST'])
+@transactions.route('/<transaction_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit(transaction_id):
     """Edit an existing transaction"""
@@ -161,7 +165,7 @@ def edit(transaction_id):
                            transaction=transaction)
 
 
-@transactions.route('/transactions/<transaction_id>/delete', methods=['POST'])
+@transactions.route('/<transaction_id>/delete', methods=['POST'])
 @login_required
 def delete(transaction_id):
     """Delete a transaction"""
@@ -179,7 +183,7 @@ def delete(transaction_id):
     return redirect(url_for('transactions.index'))
 
 
-@transactions.route('/transactions/import', methods=['GET', 'POST'])
+@transactions.route('/import', methods=['GET', 'POST'])
 @login_required
 def import_transactions():
     """Import transactions from CSV"""

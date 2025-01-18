@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Import Transactions{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/import.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="import-container">
+    <div class="header">
+        <div class="header-title">
+            <h1>Import Transactions</h1>
+            <p class="subtitle">Import your transactions from a CSV file</p>
+        </div>
+        <a href="{{ url_for('transactions.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Transactions
+        </a>
+    </div>
+
+    <div class="import-card">
+        <div class="card-section instructions">
+            <div class="section-header">
+                <i class="fas fa-info-circle"></i>
+                <h2>Instructions</h2>
+            </div>
+            <ul>
+                <li>Prepare your CSV file with the following columns:</li>
+                <li class="indented"><code>Date</code> - in YYYY-MM-DD format</li>
+                <li class="indented"><code>Description</code> - transaction details</li>
+                <li class="indented"><code>Amount</code> - positive number</li>
+                <li class="indented"><code>Type</code> - "income" or "expense"</li>
+                <li class="indented"><code>Category</code> - transaction category</li>
+                <li>Make sure your CSV file uses comma (,) as the delimiter</li>
+            </ul>
+        </div>
+
+        <div class="card-section upload-section">
+            <div class="section-header">
+                <i class="fas fa-upload"></i>
+                <h2>Upload File</h2>
+            </div>
+
+            <form method="post" enctype="multipart/form-data">
+                {{ form.hidden_tag() }}
+
+                <div class="form-group">
+                    {{ form.account_id.label(class="form-label") }}
+                    {{ form.account_id(class="form-select") }}
+                    {% for error in form.account_id.errors %}
+                        <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </div>
+
+                <div class="dropzone-container">
+                    <div class="dropzone" id="fileDropzone">
+                        <div class="dropzone-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <div class="dropzone-text">
+                            <p class="primary">Drag and drop your CSV file here</p>
+                            <p class="secondary">or <span class="link">browse files</span></p>
+                        </div>
+                        {{ form.file(class="hidden", id="fileInput", accept=".csv") }}
+                    </div>
+                    {% for error in form.file.errors %}
+                        <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group checkbox-group">
+                    {{ form.has_headers(class="form-checkbox") }}
+                    {{ form.has_headers.label(class="checkbox-label") }}
+                </div>
+
+                <div id="preview" class="preview-section hidden">
+                    <div class="section-header">
+                        <i class="fas fa-table"></i>
+                        <h2>File Preview</h2>
+                    </div>
+                    <div class="preview-content"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" id="importButton" disabled>
+                        <i class="fas fa-file-import"></i> Import Transactions
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card-section sample-section">
+            <div class="section-header">
+                <i class="fas fa-file-csv"></i>
+                <h2>Sample Format</h2>
+            </div>
+            <pre class="sample-code">Date,Description,Amount,Type,Category
+2024-01-15,Grocery Shopping,150.00,expense,Food
+2024-01-16,Salary Payment,5000.00,income,Salary
+2024-01-17,Gas Station,45.00,expense,Transport</pre>
+            <a href="#" class="btn btn-outline" id="downloadSample">
+                <i class="fas fa-download"></i> Download Sample
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/import.js') }}"></script>
+{% endblock %}

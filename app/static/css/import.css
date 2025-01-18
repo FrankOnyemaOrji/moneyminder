@@ -1,0 +1,311 @@
+.import-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Header Styles */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.header-title h1 {
+    font-size: 1.875rem;
+    font-weight: 600;
+    color: #1a2b4b;
+    margin-bottom: 0.5rem;
+}
+
+.header-title .subtitle {
+    color: #64748b;
+    font-size: 1rem;
+}
+
+/* Card Styles */
+.import-card {
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.card-section {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.card-section:last-child {
+    border-bottom: none;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    color: #1e293b;
+}
+
+.section-header i {
+    font-size: 1.25rem;
+    color: #3b82f6;
+}
+
+.section-header h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+/* Instructions Section */
+.instructions {
+    background-color: #f8fafc;
+}
+
+.instructions ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.instructions li {
+    margin-bottom: 0.75rem;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.instructions li.indented {
+    margin-left: 1.5rem;
+    color: #64748b;
+}
+
+.instructions code {
+    background-color: #f1f5f9;
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+    font-family: monospace;
+    color: #3b82f6;
+}
+
+/* Upload Section */
+.dropzone-container {
+    margin: 1.5rem 0;
+}
+
+.dropzone {
+    border: 2px dashed #cbd5e1;
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.dropzone:hover, .dropzone.dragover {
+    border-color: #3b82f6;
+    background-color: #f8fafc;
+}
+
+.dropzone-icon {
+    font-size: 2.5rem;
+    color: #3b82f6;
+    margin-bottom: 1rem;
+}
+
+.dropzone-text .primary {
+    font-size: 1.125rem;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+}
+
+.dropzone-text .secondary {
+    color: #64748b;
+}
+
+.dropzone-text .link {
+    color: #3b82f6;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+/* Form Elements */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #475569;
+    margin-bottom: 0.5rem;
+}
+
+.form-select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background-color: white;
+    color: #1e293b;
+    font-size: 0.875rem;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-checkbox {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 4px;
+    border: 1px solid #cbd5e1;
+}
+
+.checkbox-label {
+    font-size: 0.875rem;
+    color: #475569;
+}
+
+/* Preview Section */
+.preview-section {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.preview-table th {
+    background-color: #f8fafc;
+    padding: 0.75rem;
+    text-align: left;
+    font-weight: 500;
+    color: #475569;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.preview-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #e2e8f0;
+    color: #1e293b;
+}
+
+.preview-table tr:hover td {
+    background-color: #f8fafc;
+}
+
+/* Sample Section */
+.sample-code {
+    background-color: #f8fafc;
+    padding: 1rem;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 0.875rem;
+    color: #1e293b;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 6px;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: none;
+}
+
+.btn i {
+    font-size: 1rem;
+}
+
+.btn-primary {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #2563eb;
+}
+
+.btn-primary:disabled {
+    background-color: #93c5fd;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    background-color: #f1f5f9;
+    color: #475569;
+}
+
+.btn-secondary:hover {
+    background-color: #e2e8f0;
+}
+
+.btn-outline {
+    border: 1px solid #e2e8f0;
+    background-color: transparent;
+    color: #475569;
+}
+
+.btn-outline:hover {
+    background-color: #f8fafc;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 2rem;
+}
+
+/* Error Messages */
+.error-message {
+    color: #dc2626;
+    font-size: 0.75rem;
+    margin-top: 0.5rem;
+    display: block;
+}
+
+/* Utilities */
+.hidden {
+    display: none;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 640px) {
+    .import-container {
+        padding: 1rem;
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .preview-table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+}

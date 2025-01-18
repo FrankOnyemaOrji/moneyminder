@@ -4,6 +4,8 @@ from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_moment import Moment
 from .config import Config
+from app.utils.filters import init_filters
+from flask_wtf.csrf import CSRFProtect
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -13,7 +15,11 @@ moment = Moment()
 
 def create_app():
     app = Flask(__name__)
+    init_filters(app)
     app.config.from_object(Config)
+
+    csrf = CSRFProtect()
+    csrf.init_app(app)
 
     # Initialize Flask extensions
     db.init_app(app)

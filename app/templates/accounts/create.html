@@ -1,113 +1,168 @@
 {% extends "base.html" %}
 
-{% block title %}Edit Account{% endblock %}
+{% block title %}Create Account{% endblock %}
+
+{% block styles %}
+    {{ super() }}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/account-forms.css') }}">
+{% endblock %}
 
 {% block content %}
-<div class="form-container">
-    <div class="form-header">
-        <h1>Edit Account</h1>
-        <div class="header-actions">
+    <div class="form-container">
+        <div class="form-header">
+            <div class="header-title">
+                <h1>Create New Account</h1>
+                <p class="subtitle">Add a new account to track your finances</p>
+            </div>
             <a href="{{ url_for('accounts.index') }}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Back to Accounts
             </a>
-            <a href="{{ url_for('accounts.view', account_id=account.id) }}" class="btn btn-info">
-                <i class="fas fa-chart-line"></i> View Transactions
-            </a>
+        </div>
+
+        <div class="form-card">
+            <!-- Replace the existing form opening tag with: -->
+            <form class="form" method="post" action="{{ url_for('accounts.create') }}" novalidate
+                  id="createAccountForm">
+                {{ form.hidden_tag() }}
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        {{ form.name.label(class="form-label") }}
+                        {{ form.name(class="form-control",
+                               placeholder="Enter account name",
+                               required=true,
+                               minlength="2",
+                               maxlength="100",
+                               autocomplete="off") }}
+                        <div class="error-message" data-error="name"></div>
+                        {% for error in form.name.errors %}
+                            <span class="error-message">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+
+                    <div class="form-group">
+                        {{ form.account_type.label(class="form-label") }}
+                        <div class="select-wrapper">
+                            {{ form.account_type(class="form-control", required=true) }}
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="error-message" data-error="account_type"></div>
+                        {% for error in form.account_type.errors %}
+                            <span class="error-message">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+
+                    <div class="form-group">
+                        {{ form.currency.label(class="form-label") }}
+                        <div class="select-wrapper">
+                            {{ form.currency(class="form-control", required=true) }}
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="error-message" data-error="currency"></div>
+                        {% for error in form.currency.errors %}
+                            <span class="error-message">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+
+                    <div class="form-group">
+                        {{ form.initial_balance.label(class="form-label") }}
+                        <div class="input-group">
+                            <span class="input-group-text currency-symbol">$</span>
+                            {{ form.initial_balance(class="form-control",
+                                              placeholder="0.00",
+                                              step="0.01",
+                                              min="0",
+                                              required=true,
+                                              pattern="[0-9]*\.?[0-9]+") }}
+                        </div>
+                        <div class="error-message" data-error="initial_balance"></div>
+                        {% for error in form.initial_balance.errors %}
+                            <span class="error-message">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+
+                    <div class="form-group full-width">
+                        {{ form.description.label(class="form-label") }}
+                        {{ form.description(class="form-control",
+                                      rows="3",
+                                      placeholder="Enter account description (optional)",
+                                      maxlength="500") }}
+                        <div class="description-counter">0/500</div>
+                        {% for error in form.description.errors %}
+                            <span class="error-message">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <a href="{{ url_for('accounts.index') }}" class="btn btn-secondary">Cancel</a>
+                    {{ form.submit(class="btn btn-primary") }}
+                </div>
+            </form>
+        </div>
+
+        <div class="help-section">
+            <div class="help-card">
+                <div class="help-header">
+                    <i class="fas fa-lightbulb"></i>
+                    <h3>Account Types Guide</h3>
+                </div>
+                <div class="help-content">
+                    <ul>
+                        <li class="help-item" data-type="bank">
+                            <i class="fas fa-university help-icon"></i>
+                            <div class="help-text">
+                                <strong>Bank Account</strong>
+                                <span>For checking and savings accounts</span>
+                            </div>
+                        </li>
+                        <li class="help-item" data-type="cash">
+                            <i class="fas fa-wallet help-icon"></i>
+                            <div class="help-text">
+                                <strong>Cash</strong>
+                                <span>For physical money and petty cash</span>
+                            </div>
+                        </li>
+                        <li class="help-item" data-type="credit">
+                            <i class="fas fa-credit-card help-icon"></i>
+                            <div class="help-text">
+                                <strong>Credit Card</strong>
+                                <span>For credit card accounts and loans</span>
+                            </div>
+                        </li>
+                        <li class="help-item" data-type="investment">
+                            <i class="fas fa-chart-line help-icon"></i>
+                            <div class="help-text">
+                                <strong>Investment</strong>
+                                <span>For stocks, bonds, and other investments</span>
+                            </div>
+                        </li>
+                        <li class="help-item" data-type="mobile_money">
+                            <i class="fas fa-mobile-alt help-icon"></i>
+                            <div class="help-text">
+                                <strong>Mobile Money</strong>
+                                <span>For digital payment services and e-wallets</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
 
-    <form class="form" method="post" novalidate>
-        {{ form.hidden_tag() }}
-
-        <div class="form-grid">
-            <div class="form-group">
-                {{ form.name.label }}
-                {{ form.name(class="form-control") }}
-                {% for error in form.name.errors %}
-                    <span class="error">{{ error }}</span>
-                {% endfor %}
+    <div class="flash-messages">
+        {% for category, message in get_flashed_messages(with_categories=true) %}
+            <div class="flash-message {{ category }}">
+                <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' }}"></i>
+                {{ message }}
+                <button class="close-flash">&times;</button>
             </div>
-
-            <div class="form-group">
-                {{ form.account_type.label }}
-                {{ form.account_type(class="form-control") }}
-                {% for error in form.account_type.errors %}
-                    <span class="error">{{ error }}</span>
-                {% endfor %}
-            </div>
-
-            <div class="form-group">
-                {{ form.currency.label }}
-                {{ form.currency(class="form-control") }}
-                {% for error in form.currency.errors %}
-                    <span class="error">{{ error }}</span>
-                {% endfor %}
-            </div>
-
-            <div class="form-group">
-                {{ form.current_balance.label }}
-                <div class="input-group">
-                    <span class="input-group-text">{{ account.currency }}</span>
-                    {{ form.current_balance(class="form-control", disabled=true) }}
-                </div>
-            </div>
-
-            <div class="form-group full-width">
-                {{ form.description.label }}
-                {{ form.description(class="form-control") }}
-                {% for error in form.description.errors %}
-                    <span class="error">{{ error }}</span>
-                {% endfor %}
-            </div>
-        </div>
-
-        <div class="account-summary">
-            <h3>Account Summary</h3>
-            <div class="summary-grid">
-                <div class="summary-item">
-                    <span class="label">Account Created</span>
-                    <span class="value">{{ moment(account.created_at).format('LL') }}</span>
-                </div>
-                <div class="summary-item">
-                    <span class="label">Last Updated</span>
-                    <span class="value">{{ moment(account.updated_at).fromNow() }}</span>
-                </div>
-                <div class="summary-item">
-                    <span class="label">Transaction Count</span>
-                    <span class="value">{{ account.transactions.count() }}</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="form-actions">
-            <a href="{{ url_for('accounts.delete', account_id=account.id) }}" class="btn btn-danger">Delete Account</a>
-            <div class="action-group">
-                <a href="{{ url_for('accounts.index') }}" class="btn btn-secondary">Cancel</a>
-                {{ form.submit(class="btn btn-primary") }}
-            </div>
-        </div>
-    </form>
-</div>
+        {% endfor %}
+    </div>
 {% endblock %}
 
 {% block scripts %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Handle account type changes
-    const accountTypeSelect = document.getElementById('account_type');
-    const currencySelect = document.getElementById('currency');
-
-    // Confirm before changing currency
-    currencySelect.addEventListener('change', function() {
-        const newCurrency = this.value;
-        const oldCurrency = '{{ account.currency }}';
-
-        if (newCurrency !== oldCurrency) {
-            if (!confirm('Changing the currency may affect your transaction history. Are you sure you want to continue?')) {
-                this.value = oldCurrency;
-            }
-        }
-    });
-});
-</script>
+    {{ super() }}
+    <script src="{{ url_for('static', filename='js/account-forms.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/flash-messages.js') }}"></script>
 {% endblock %}

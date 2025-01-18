@@ -2,144 +2,118 @@
 
 {% block title %}New Transaction{% endblock %}
 
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/transaction-form.css') }}">
+{% endblock %}
+
 {% block content %}
 <div class="form-container">
     <div class="form-header">
         <h1>Create New Transaction</h1>
         <a href="{{ url_for('transactions.index') }}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Back to Transactions
+            <i class="fas fa-arrow-left"></i> Back
         </a>
     </div>
 
-    <form class="transaction-form" method="post" novalidate>
-        {{ form.hidden_tag() }}
+    <div class="form-content">
+        <form class="transaction-form" method="post" novalidate>
+            {{ form.hidden_tag() }}
 
-        <div class="form-grid">
-            <div class="form-section basic-info">
-                <h2>Basic Information</h2>
+            <div class="form-grid">
+                <div class="form-section">
+                    <h2>Basic Information</h2>
 
-                <div class="form-group">
-                    {{ form.amount.label }}
-                    <div class="input-group">
-                        <span class="input-group-text">$</span>
-                        {{ form.amount(class="form-control") }}
-                    </div>
-                    {% for error in form.amount.errors %}
-                        <span class="error">{{ error }}</span>
-                    {% endfor %}
-                </div>
-
-                <div class="form-group">
-                    {{ form.transaction_type.label }}
-                    {{ form.transaction_type(class="form-control") }}
-                    {% for error in form.transaction_type.errors %}
-                        <span class="error">{{ error }}</span>
-                    {% endfor %}
-                </div>
-
-                <div class="form-group">
-                    {{ form.date.label }}
-                    {{ form.date(class="form-control") }}
-                    {% for error in form.date.errors %}
-                        <span class="error">{{ error }}</span>
-                    {% endfor %}
-                </div>
-
-                <div class="form-group">
-                    {{ form.description.label }}
-                    {{ form.description(class="form-control") }}
-                    {% for error in form.description.errors %}
-                        <span class="error">{{ error }}</span>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <div class="form-section categorization">
-                <h2>Categorization</h2>
-
-                <div class="form-group">
-                    {{ form.account_id.label }}
-                    {{ form.account_id(class="form-control") }}
-                    {% for error in form.account_id.errors %}
-                        <span class="error">{{ error }}</span>
-                    {% endfor %}
-                </div>
-
-                <div class="form-group">
-                    {{ form.category_id.label }}
-                    {{ form.category_id(class="form-control") }}
-                    {% for error in form.category_id.errors %}
-                        <span class="error">{{ error }}</span>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <div class="form-section recurrence">
-                <h2>Recurrence</h2>
-
-                <div class="form-group">
-                    <div class="checkbox-group">
-                        {{ form.is_recurring(class="form-check-input") }}
-                        {{ form.is_recurring.label }}
-                    </div>
-                </div>
-
-                <div id="recurrenceOptions" class="recurrence-options" style="display: none;">
                     <div class="form-group">
-                        {{ form.recurrence_interval.label }}
-                        {{ form.recurrence_interval(class="form-control") }}
-                        {% for error in form.recurrence_interval.errors %}
+                        {{ form.transaction_type.label }}
+                        {{ form.transaction_type(class="form-control") }}
+                        {% for error in form.transaction_type.errors %}
+                            <span class="error">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+
+                    <div class="form-group amount-group">
+                        {{ form.amount.label }}
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            {{ form.amount(class="form-control", placeholder="0.00") }}
+                        </div>
+                        {% for error in form.amount.errors %}
                             <span class="error">{{ error }}</span>
                         {% endfor %}
                     </div>
 
                     <div class="form-group">
-                        {{ form.recurrence_end_date.label }}
-                        {{ form.recurrence_end_date(class="form-control") }}
-                        {% for error in form.recurrence_end_date.errors %}
+                        {{ form.date.label }}
+                        {{ form.date(class="form-control", type="date") }}
+                        {% for error in form.date.errors %}
+                            <span class="error">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+
+                    <div class="form-group">
+                        {{ form.description.label }}
+                        {{ form.description(class="form-control", rows=3, placeholder="Enter description...") }}
+                        {% for error in form.description.errors %}
                             <span class="error">{{ error }}</span>
                         {% endfor %}
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <div class="form-actions">
-            <a href="{{ url_for('transactions.index') }}" class="btn btn-secondary">Cancel</a>
-            {{ form.submit(class="btn btn-primary") }}
-        </div>
-    </form>
+                <div class="form-section">
+                    <h2>Categorization</h2>
+
+                    <div class="form-group">
+                        {{ form.account_id.label }}
+                        {{ form.account_id(class="form-control") }}
+                        {% for error in form.account_id.errors %}
+                            <span class="error">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+
+                    <div class="form-group">
+                        {{ form.category_id.label }}
+                        {{ form.category_id(class="form-control") }}
+                        {% for error in form.category_id.errors %}
+                            <span class="error">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            {{ form.is_recurring(class="form-checkbox") }}
+                            {{ form.is_recurring.label }}
+                        </div>
+                    </div>
+
+                    <div id="recurrenceOptions" class="recurrence-options" style="display: none;">
+                        <div class="form-group">
+                            {{ form.recurrence_interval.label }}
+                            {{ form.recurrence_interval(class="form-control") }}
+                            {% for error in form.recurrence_interval.errors %}
+                                <span class="error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+
+                        <div class="form-group">
+                            {{ form.recurrence_end_date.label }}
+                            {{ form.recurrence_end_date(class="form-control", type="date") }}
+                            {% for error in form.recurrence_end_date.errors %}
+                                <span class="error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a href="{{ url_for('transactions.index') }}" class="btn btn-secondary">Cancel</a>
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const isRecurringCheckbox = document.getElementById('is_recurring');
-    const recurrenceOptions = document.getElementById('recurrenceOptions');
-    const typeSelect = document.getElementById('transaction_type');
-    const amountInput = document.getElementById('amount');
-
-    // Toggle recurrence options
-    isRecurringCheckbox.addEventListener('change', function() {
-        recurrenceOptions.style.display = this.checked ? 'block' : 'none';
-    });
-
-    // Format amount as currency
-    amountInput.addEventListener('blur', function() {
-        if (this.value) {
-            const amount = parseFloat(this.value);
-            if (!isNaN(amount)) {
-                this.value = amount.toFixed(2);
-            }
-        }
-    });
-
-    // Change form styling based on transaction type
-    typeSelect.addEventListener('change', function() {
-        const form = document.querySelector('.transaction-form');
-        form.className = 'transaction-form ' + this.value;
-    });
-});
-</script>
+<script src="{{ url_for('static', filename='js/transaction-form.js') }}"></script>
 {% endblock %}

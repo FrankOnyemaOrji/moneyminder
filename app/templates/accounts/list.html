@@ -10,13 +10,38 @@
 <div class="accounts-container">
     <div class="accounts-header">
         <div class="header-content">
-            <h1>Accounts</h1>
-            <div class="total-balance">
-                <span class="label">Total Balance</span>
-                <span class="amount">{{ "${:,.2f}".format(total_balance) }}</span>
+            <div class="header-title">
+                <h1>Accounts</h1>
+                <p class="subtitle">Manage your financial accounts</p>
+            </div>
+            <div class="balance-summary">
+                <div class="total-balance">
+                    <span class="label">Total Balance</span>
+                    <span class="amount" data-value="{{ total_balance }}">{{ "${:,.2f}".format(total_balance) }}</span>
+                </div>
             </div>
         </div>
         <div class="header-actions">
+            <div class="search-filters">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchAccounts" placeholder="Search accounts...">
+                </div>
+                <select id="accountTypeFilter" class="filter-select">
+                    <option value="all">All Types</option>
+                    <option value="bank">Bank Accounts</option>
+                    <option value="cash">Cash</option>
+                    <option value="credit">Credit Cards</option>
+                    <option value="investment">Investments</option>
+                    <option value="mobile_money">Mobile Money</option>
+                    <option value="other">Other</option>
+                </select>
+                <select id="sortAccounts" class="filter-select">
+                    <option value="balance">Sort by Balance</option>
+                    <option value="name">Sort by Name</option>
+                    <option value="activity">Sort by Activity</option>
+                </select>
+            </div>
             <a href="{{ url_for('accounts.create') }}" class="btn btn-primary">
                 <i class="fas fa-plus"></i> New Account
             </a>
@@ -27,16 +52,23 @@
         {% for account in accounts %}
         <div class="account-card">
             <div class="card-header">
-                <div class="account-type {{ account.account_type }}">
+                <div class="account-type {{ account.account_type }}"
+                     data-tooltip="{{ account.account_type|title }} Account">
                     <i class="fas fa-{{ account.account_type|account_icon }}"></i>
                 </div>
                 <div class="account-actions">
-                    <a href="{{ url_for('accounts.edit', account_id=account.id) }}" class="btn-icon" title="Edit">
+                    <a href="{{ url_for('accounts.edit', account_id=account.id) }}" class="btn-icon" title="Edit Account">
                         <i class="fas fa-edit"></i>
                     </a>
-                    <a href="{{ url_for('accounts.delete', account_id=account.id) }}" class="btn-icon" title="Delete">
+                    {% if account.balance == 0 %}
+                    <a href="{{ url_for('accounts.delete', account_id=account.id) }}"
+                       class="btn-icon"
+                       title="Delete Account"
+                       data-delete-account="{{ account.id }}"
+                       data-account-name="{{ account.name }}">
                         <i class="fas fa-trash"></i>
                     </a>
+                    {% endif %}
                 </div>
             </div>
 
@@ -44,19 +76,31 @@
                 <a href="{{ url_for('accounts.view', account_id=account.id) }}" class="account-name">
                     {{ account.name }}
                 </a>
-                <div class="account-balance">
+                <div class="account-balance" data-value="{{ account.balance }}" data-currency="{{ account.currency }}">
                     {{ account.currency }} {{ "${:,.2f}".format(account.balance) }}
                 </div>
 
                 <div class="account-stats">
                     <div class="stat">
                         <span class="label">Monthly Income</span>
-                        <span class="value income">+{{ "${:,.2f}".format(account_stats[account.id]['monthly_income']) }}</span>
+                        <span class="value income">
+                            +{{ "${:,.2f}".format(account_stats[account.id]['monthly_income']) }}
+                        </span>
                     </div>
                     <div class="stat">
                         <span class="label">Monthly Expenses</span>
-                        <span class="value expenses">-{{ "${:,.2f}".format(account_stats[account.id]['monthly_expenses']) }}</span>
+                        <span class="value expenses">
+                            -{{ "${:,.2f}".format(account_stats[account.id]['monthly_expenses']) }}
+                        </span>
                     </div>
+                </div>
+
+                <div class="activity-indicator">
+                    <div class="progress-bar">
+                        {% set activity_percentage = (account_stats[account.id]['transaction_count'] / max_transactions) * 100 if max_transactions > 0 else 0 %}
+                        <div class="progress" style="width: {{ activity_percentage }}%"></div>
+                    </div>
+                    <span class="activity-label">Activity Level</span>
                 </div>
 
                 {% if account.description %}
@@ -70,9 +114,14 @@
                 <span class="transaction-count">
                     {{ account_stats[account.id]['transaction_count'] }} transactions this month
                 </span>
-                <a href="{{ url_for('accounts.view', account_id=account.id) }}" class="view-details">
-                    View Details
-                </a>
+                <div class="footer-actions">
+                    <a href="{{ url_for('transactions.create', account_id=account.id) }}" class="btn btn-sm btn-secondary">
+                        <i class="fas fa-plus"></i> Add Transaction
+                    </a>
+                    <a href="{{ url_for('accounts.view', account_id=account.id) }}" class="btn btn-sm btn-primary">
+                        View Details
+                    </a>
+                </div>
             </div>
         </div>
         {% endfor %}
@@ -92,5 +141,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/accounts.js') }}"></script>
+<script src="{{ url_for('static', filename='js/account-forms.js') }}"></script>
 {% endblock %}

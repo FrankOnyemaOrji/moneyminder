@@ -4,7 +4,6 @@
 
 {% block content %}
 <div class="account-container">
-    <!-- Page Header -->
     <div class="page-header">
         <div class="header-content">
             <div class="header-title">
@@ -22,7 +21,6 @@
         </div>
     </div>
 
-    <!-- Account Summary -->
     <div class="account-summary-card">
         <div class="account-header">
             <div class="account-type-icon {{ account.account_type }}">
@@ -41,7 +39,6 @@
         </div>
     </div>
 
-    <!-- Edit Form -->
     <div class="form-card">
         <form class="account-edit-form" method="post" novalidate>
             {{ form.hidden_tag() }}
@@ -72,12 +69,9 @@
                         {{ form.currency(class="form-control", data_current_currency=account.currency) }}
                         <i class="fas fa-chevron-down"></i>
                     </div>
-                    {% if form.currency.data != account.currency %}
-                        <span class="warning-message">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            Changing currency will not convert existing balances
-                        </span>
-                    {% endif %}
+                    {% for error in form.currency.errors %}
+                        <span class="error-message"><i class="fas fa-exclamation-circle"></i> {{ error }}</span>
+                    {% endfor %}
                 </div>
 
                 <div class="form-group">
@@ -86,10 +80,7 @@
                         <span class="input-group-text">{{ account.currency }}</span>
                         {{ form.current_balance(class="form-control", disabled=true) }}
                     </div>
-                    <span class="help-text">
-                        <i class="fas fa-info-circle"></i>
-                        Balance is updated through transactions
-                    </span>
+                    <span class="help-text"><i class="fas fa-info-circle"></i> Balance is updated through transactions</span>
                 </div>
 
                 <div class="form-group full-width">
@@ -98,7 +89,9 @@
                                       rows="3",
                                       placeholder="Enter account description (optional)",
                                       maxlength="500") }}
-                    <div class="character-counter"></div>
+                    {% for error in form.description.errors %}
+                        <span class="error-message"><i class="fas fa-exclamation-circle"></i> {{ error }}</span>
+                    {% endfor %}
                 </div>
             </div>
 
@@ -149,9 +142,6 @@
         </form>
     </div>
 </div>
-
-<!-- Notifications Container -->
-<div id="notifications" class="notifications-container"></div>
 {% endblock %}
 
 {% block scripts %}

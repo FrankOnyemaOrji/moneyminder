@@ -4,7 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{% endblock %} - MoneyMinder</title>
+
+    <!-- Base Styles -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/accounts.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/account-management.css') }}">
+
+    <!-- Page Specific Styles -->
     {% block styles %}{% endblock %}
 </head>
 <body>
@@ -28,11 +35,15 @@
     </nav>
 
     <main class="container">
-        {% with messages = get_flashed_messages() %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 <div class="flash-messages">
-                    {% for message in messages %}
-                        <div class="flash-message">{{ message }}</div>
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }}">
+                            <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' }}"></i>
+                            {{ message }}
+                            <button class="close-flash">&times;</button>
+                        </div>
                     {% endfor %}
                 </div>
             {% endif %}
@@ -45,7 +56,10 @@
         <p>&copy; 2025 MoneyMinder. All rights reserved.</p>
     </footer>
 
+    <!-- Base Scripts -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    <!-- Page Specific Scripts -->
     {% block scripts %}{% endblock %}
 </body>
 </html>

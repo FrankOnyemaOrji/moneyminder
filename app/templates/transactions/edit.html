@@ -2,15 +2,17 @@
 
 {% block title %}Edit Transaction{% endblock %}
 
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/transaction-edit.css') }}">
+{% endblock %}
+
 {% block content %}
 <div class="form-container">
     <div class="form-header">
         <h1>Edit Transaction</h1>
-        <div class="header-actions">
-            <a href="{{ url_for('transactions.index') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Back to Transactions
-            </a>
-        </div>
+        <a href="{{ url_for('transactions.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
     </div>
 
     <div class="transaction-summary">
@@ -32,119 +34,96 @@
                 <span class="label">Last Updated</span>
                 <span class="value">{{ moment(transaction.updated_at).fromNow() }}</span>
             </div>
+            <div class="detail-item">
+                <span class="label">Account</span>
+                <span class="value">{{ transaction.account.name }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="label">Category</span>
+                <span class="value">{{ transaction.category.name }}</span>
+            </div>
         </div>
     </div>
 
-    <form class="transaction-form {{ transaction.transaction_type }}" method="post" novalidate>
-        {{ form.hidden_tag() }}
+    <div class="form-content">
+        <form class="transaction-form {{ transaction.transaction_type }}" method="post" novalidate>
+            {{ form.hidden_tag() }}
 
-        <div class="form-grid">
-            <div class="form-section basic-info">
-                <h2>Basic Information</h2>
+            <div class="form-grid">
+                <div class="form-section">
+                    <h2>Basic Information</h2>
 
-                <div class="form-group">
-                    {{ form.amount.label }}
-                    <div class="input-group">
-                        <span class="input-group-text">$</span>
-                        {{ form.amount(class="form-control") }}
+                    <div class="form-group">
+                        {{ form.transaction_type.label }}
+                        {{ form.transaction_type(class="form-control") }}
+                        {% for error in form.transaction_type.errors %}
+                            <span class="error">{{ error }}</span>
+                        {% endfor %}
                     </div>
-                    {% for error in form.amount.errors %}
-                        <span class="error">{{ error }}</span>
-                    {% endfor %}
+
+                    <div class="form-group amount-group">
+                        {{ form.amount.label }}
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            {{ form.amount(class="form-control", placeholder="0.00") }}
+                        </div>
+                        {% for error in form.amount.errors %}
+                            <span class="error">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+
+                    <div class="form-group">
+                        {{ form.date.label }}
+                        {{ form.date(class="form-control", type="date") }}
+                        {% for error in form.date.errors %}
+                            <span class="error">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+
+                    <div class="form-group">
+                        {{ form.description.label }}
+                        {{ form.description(class="form-control", rows=3, placeholder="Enter description...") }}
+                        {% for error in form.description.errors %}
+                            <span class="error">{{ error }}</span>
+                        {% endfor %}
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    {{ form.transaction_type.label }}
-                    {{ form.transaction_type(class="form-control") }}
-                    {% for error in form.transaction_type.errors %}
-                        <span class="error">{{ error }}</span>
-                    {% endfor %}
-                </div>
+                <div class="form-section">
+                    <h2>Categorization</h2>
 
-                <div class="form-group">
-                    {{ form.date.label }}
-                    {{ form.date(class="form-control") }}
-                    {% for error in form.date.errors %}
-                        <span class="error">{{ error }}</span>
-                    {% endfor %}
-                </div>
+                    <div class="form-group">
+                        {{ form.account_id.label }}
+                        {{ form.account_id(class="form-control") }}
+                        {% for error in form.account_id.errors %}
+                            <span class="error">{{ error }}</span>
+                        {% endfor %}
+                    </div>
 
-                <div class="form-group">
-                    {{ form.description.label }}
-                    {{ form.description(class="form-control") }}
-                    {% for error in form.description.errors %}
-                        <span class="error">{{ error }}</span>
-                    {% endfor %}
+                    <div class="form-group">
+                        {{ form.category_id.label }}
+                        {{ form.category_id(class="form-control") }}
+                        {% for error in form.category_id.errors %}
+                            <span class="error">{{ error }}</span>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
 
-            <div class="form-section categorization">
-                <h2>Categorization</h2>
-
-                <div class="form-group">
-                    {{ form.account_id.label }}
-                    {{ form.account_id(class="form-control") }}
-                    {% for error in form.account_id.errors %}
-                        <span class="error">{{ error }}</span>
-                    {% endfor %}
-                </div>
-
-                <div class="form-group">
-                    {{ form.category_id.label }}
-                    {{ form.category_id(class="form-control") }}
-                    {% for error in form.category_id.errors %}
-                        <span class="error">{{ error }}</span>
-                    {% endfor %}
+            <div class="form-actions">
+                <button type="button" class="btn btn-danger" onclick="confirmDelete('{{ url_for('transactions.delete', transaction_id=transaction.id) }}')">
+                    <i class="fas fa-trash"></i> Delete Transaction
+                </button>
+                <div class="action-group">
+                    <a href="{{ url_for('transactions.index') }}" class="btn btn-secondary">Cancel</a>
+                    {{ form.submit(class="btn btn-primary") }}
                 </div>
             </div>
-        </div>
-
-        <div class="form-actions">
-            <button type="button"
-                    class="btn btn-danger"
-                    onclick="confirmDelete('{{ url_for('transactions.delete', transaction_id=transaction.id) }}')">
-                Delete Transaction
-            </button>
-            <div class="action-group">
-                <a href="{{ url_for('transactions.index') }}" class="btn btn-secondary">Cancel</a>
-                {{ form.submit(class="btn btn-primary") }}
-            </div>
-        </div>
-    </form>
+        </form>
+    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const typeSelect = document.getElementById('transaction_type');
-    const amountInput = document.getElementById('amount');
-    const form = document.querySelector('.transaction-form');
-
-    // Format amount as currency
-    amountInput.addEventListener('blur', function() {
-        if (this.value) {
-            const amount = parseFloat(this.value);
-            if (!isNaN(amount)) {
-                this.value = amount.toFixed(2);
-            }
-        }
-    });
-
-    // Change form styling based on transaction type
-    typeSelect.addEventListener('change', function() {
-        form.className = 'transaction-form ' + this.value;
-    });
-});
-
-function confirmDelete(deleteUrl) {
-    if (confirm('Are you sure you want to delete this transaction? This action cannot be undone.')) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = deleteUrl;
-        document.body.appendChild(form);
-        form.submit();
-    }
-}
-</script>
+<script src="{{ url_for('static', filename='js/transaction-edit.js') }}"></script>
 {% endblock %}
