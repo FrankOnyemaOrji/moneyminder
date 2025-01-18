@@ -244,7 +244,6 @@ def view(account_id):
                            end_date=end_date)
 
 
-
 # Update this route definition in accounts.py
 @accounts.route('/api/<account_id>/balance-history')  # Add '/api/' prefix
 @login_required

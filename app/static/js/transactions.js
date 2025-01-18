@@ -1,347 +1,201 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Category Management
-    initializeCategoryManagement();
-    initializeCategorySearch();
-    restoreExpandedState();
+    // Chart configuration
+    Chart.defaults.global.defaultFontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+    Chart.defaults.global.defaultFontSize = 13;
+    Chart.defaults.global.defaultFontColor = '#64748b';
+    Chart.defaults.global.elements.line.tension = 0.4;
 
-    // Initialize color and icon previews
-    updateColorPreview();
-    updateIconPreview();
+    // Initialize charts
+    const cashFlowChart = initializeCashFlowChart();
+    const categoryChart = initializeCategoryChart();
 
-    // Charts Initialization
-    initializeCharts();
-
-    // Form Handling
-    initializeFormHandling();
-});
-
-// Category Management Functions
-function initializeCategoryManagement() {
-    // Initialize category form event listener
-    const categoryForm = document.getElementById('categoryForm');
-    if (categoryForm) {
-        categoryForm.addEventListener('submit', handleCategorySubmit);
-    }
-
-    // Initialize modal close on outside click
-    window.onclick = function(event) {
-        const modal = document.getElementById('categoryModal');
-        if (event.target === modal) {
-            hideCategoryModal();
-        }
-    };
-
-    // Initialize color preview in select
-    const colorSelect = document.getElementById('categoryColor');
-    if (colorSelect) {
-        colorSelect.addEventListener('change', updateColorPreview);
-    }
-
-    // Initialize icon preview in select
-    const iconSelect = document.getElementById('categoryIcon');
-    if (iconSelect) {
-        iconSelect.addEventListener('change', updateIconPreview);
-    }
-}
-
-function updateColorPreview() {
-    const select = document.getElementById('categoryColor');
-    const selectedOption = select.options[select.selectedIndex];
-    const color = window.getComputedStyle(selectedOption).backgroundColor;
-    select.style.borderLeft = `4px solid ${color}`;
-}
-
-function updateIconPreview() {
-    const select = document.getElementById('categoryIcon');
-    const selectedIcon = select.value;
-    const iconPreview = document.querySelector('.icon-preview');
-    if (iconPreview) {
-        iconPreview.innerHTML = `<i class="fas fa-${selectedIcon}"></i>`;
-    }
-}
-
-function toggleSubcategories(button) {
-    const categoryItem = button.closest('.category-item');
-    const subcategories = categoryItem.querySelector('.subcategories');
-    if (subcategories) {
-        const isHidden = subcategories.style.display === 'none';
-        subcategories.style.display = isHidden ? 'block' : 'none';
-        button.classList.toggle('expanded');
-
-        // Save state to localStorage
-        const categoryId = categoryItem.dataset.id;
-        const expandedCategories = JSON.parse(localStorage.getItem('expandedCategories') || '{}');
-        expandedCategories[categoryId] = isHidden;
-        localStorage.setItem('expandedCategories', JSON.stringify(expandedCategories));
-    }
-}
-
-function restoreExpandedState() {
-    const expandedCategories = JSON.parse(localStorage.getItem('expandedCategories') || '{}');
-    Object.entries(expandedCategories).forEach(([categoryId, isExpanded]) => {
-        const categoryItem = document.querySelector(`.category-item[data-id="${categoryId}"]`);
-        if (categoryItem && isExpanded) {
-            const button = categoryItem.querySelector('.toggle-btn');
-            if (button) {
-                toggleSubcategories(button);
-            }
-        }
-    });
-}
-
-function showCategoryModal(action, categoryId = null) {
-    const modal = document.getElementById('categoryModal');
-    const form = document.getElementById('categoryForm');
-    const title = document.getElementById('modalTitle');
-
-    // Reset form
-    form.reset();
-
-    if (action === 'edit' && categoryId) {
-        title.textContent = 'Edit Category';
-        // Fetch category data and populate form
-        fetch(`/api/categories/${categoryId}`)
-            .then(response => response.json())
-            .then(category => {
-                document.getElementById('categoryName').value = category.name;
-                document.getElementById('categoryDesc').value = category.description || '';
-                document.getElementById('parentCategory').value = category.parent_id || '';
-                document.getElementById('categoryIcon').value = category.icon;
-                document.getElementById('categoryColor').value = category.color;
-                document.getElementById('isActive').checked = category.is_active;
-                document.getElementById('isBudgetTracked').checked = category.is_budget_tracked;
-
-                updateColorPreview();
-                updateIconPreview();
-            })
-            .catch(error => {
-                console.error('Error fetching category:', error);
-                alert('Error loading category data');
-            });
-        form.action = `/categories/${categoryId}/edit`;
-    } else {
-        title.textContent = 'Add Category';
-        form.action = '/categories/create';
-    }
-
-    modal.style.display = 'flex';
-}
-
-function deleteCategory(categoryId) {
-    if (confirm('Are you sure you want to delete this category? This will also delete all subcategories.')) {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-
-        fetch(`/categories/${categoryId}/delete`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': csrfToken,
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(data => {
-                    throw new Error(data.message || 'Error deleting category');
-                });
-            }
-            window.location.reload();
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert(error.message);
+    // Handle category filter changes
+    const categoryFilter = document.getElementById('category_filter');
+    const tagFilter = document.getElementById('tag_filter');
+    if (categoryFilter && tagFilter) {
+        categoryFilter.addEventListener('change', function() {
+            updateTagOptions(this.value);
         });
     }
-}
 
-function handleCategorySubmit(e) {
-    e.preventDefault();
-    const form = e.target;
-    const formData = new FormData(form);
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-
-    // Add boolean values explicitly
-    formData.set('is_active', document.getElementById('isActive').checked);
-    formData.set('is_budget_tracked', document.getElementById('isBudgetTracked').checked);
-
-    fetch(form.action, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRFToken': csrfToken
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            return response.json().then(data => {
-                throw new Error(data.message || 'Error saving category');
-            });
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.status === 'success') {
-            window.location.reload();
-        } else {
-            throw new Error(data.message || 'Error saving category');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert(error.message);
-    });
-}
-
-function hideCategoryModal() {
-    const modal = document.getElementById('categoryModal');
-    modal.style.display = 'none';
-}
-
-// Category Tree Search and Filter
-function initializeCategorySearch() {
-    const searchInput = document.getElementById('categorySearch');
-    if (searchInput) {
-        searchInput.addEventListener('input', debounce(filterCategories, 300));
-    }
-}
-
-function filterCategories(e) {
-    const searchTerm = e.target.value.toLowerCase();
-    const categoryItems = document.querySelectorAll('.category-item');
-
-    categoryItems.forEach(item => {
-        const categoryName = item.querySelector('.category-name').textContent.toLowerCase();
-        const isMatch = categoryName.includes(searchTerm);
-
-        if (searchTerm === '') {
-            item.style.display = '';
-            const subcategories = item.querySelector('.subcategories');
-            if (subcategories) {
-                subcategories.style.display = 'none';
-            }
-        } else {
-            if (isMatch) {
-                item.style.display = '';
-                let parent = item.parentElement;
-                while (parent && parent.classList.contains('subcategories')) {
-                    parent.style.display = 'block';
-                    parent = parent.parentElement.parentElement;
-                }
-            } else {
-                const hasMatchingChildren = Array.from(item.querySelectorAll('.category-name'))
-                    .some(name => name.textContent.toLowerCase().includes(searchTerm));
-                item.style.display = hasMatchingChildren ? '' : 'none';
-            }
-        }
-    });
-}
-
-// Chart Initialization Functions
-function initializeCharts() {
-    const cashFlowCtx = document.getElementById('cashFlowChart');
-    const categoryCtx = document.getElementById('categoryChart');
-
-    if (cashFlowCtx) {
-        initializeCashFlowChart(cashFlowCtx);
+    // Chart period selector
+    const cashflowPeriod = document.getElementById('cashflowPeriod');
+    if (cashflowPeriod) {
+        cashflowPeriod.addEventListener('change', function() {
+            updateCashFlowChart(cashFlowChart, this.value);
+        });
     }
 
-    if (categoryCtx) {
-        initializeCategoryChart(categoryCtx);
+    // Chart type selector
+    const categoryChartType = document.getElementById('categoryChartType');
+    if (categoryChartType) {
+        categoryChartType.addEventListener('change', function() {
+            updateCategoryChartType(categoryChart, this.value);
+        });
     }
-}
 
-function initializeCashFlowChart(ctx) {
-    new Chart(ctx.getContext('2d'), {
-        type: 'line',
-        data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-            datasets: [{
-                label: 'Income',
-                borderColor: '#059669',
-                data: [4500, 5000, 4800, 5200, 4900, 5500],
-                fill: false
-            }, {
-                label: 'Expenses',
-                borderColor: '#dc2626',
-                data: [3000, 3200, 3100, 3400, 3300, 3600],
-                fill: false
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                yAxes: [{
-                    ticks: {
-                        beginAtZero: true,
-                        callback: function(value) {
-                            return '$' + value.toLocaleString();
+    // Initialize tag options based on selected category
+    function updateTagOptions(selectedCategory) {
+        const tags = categoryTags[selectedCategory]?.Subcategories || [];
+        tagFilter.innerHTML = '<option value="">All Tags</option>' +
+            tags.map(tag => `<option value="${tag}">${tag}</option>`).join('');
+
+        const tagFilterGroup = document.querySelector('.tag-filter');
+        tagFilterGroup.style.display = selectedCategory ? 'block' : 'none';
+    }
+
+    // Cash Flow Chart initialization
+    function initializeCashFlowChart() {
+        const ctx = document.getElementById('cashFlowChart').getContext('2d');
+        const gradientIncome = ctx.createLinearGradient(0, 0, 0, 400);
+        gradientIncome.addColorStop(0, 'rgba(5, 150, 105, 0.1)');
+        gradientIncome.addColorStop(1, 'rgba(5, 150, 105, 0)');
+
+        const gradientExpense = ctx.createLinearGradient(0, 0, 0, 400);
+        gradientExpense.addColorStop(0, 'rgba(220, 38, 38, 0.1)');
+        gradientExpense.addColorStop(1, 'rgba(220, 38, 38, 0)');
+
+        return new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Income',
+                    borderColor: '#059669',
+                    backgroundColor: gradientIncome,
+                    borderWidth: 2,
+                    pointBackgroundColor: '#059669',
+                    data: []
+                }, {
+                    label: 'Expenses',
+                    borderColor: '#dc2626',
+                    backgroundColor: gradientExpense,
+                    borderWidth: 2,
+                    pointBackgroundColor: '#dc2626',
+                    data: []
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                legend: {
+                    position: 'top',
+                    align: 'end'
+                },
+                tooltips: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: function(tooltipItem, data) {
+                            return data.datasets[tooltipItem.datasetIndex].label + ': $' +
+                                   Number(tooltipItem.yLabel).toLocaleString(undefined, {
+                                       minimumFractionDigits: 2,
+                                       maximumFractionDigits: 2
+                                   });
                         }
                     }
+                },
+                scales: {
+                    xAxes: [{
+                        gridLines: {
+                            display: false
+                        }
+                    }],
+                    yAxes: [{
+                        gridLines: {
+                            borderDash: [2],
+                            color: '#e2e8f0'
+                        },
+                        ticks: {
+                            beginAtZero: true,
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }]
+                }
+            }
+        });
+    }
+
+    // Category Chart initialization
+    function initializeCategoryChart() {
+        const ctx = document.getElementById('categoryChart').getContext('2d');
+        const categoryColors = Object.values(categoryData).map(cat => cat.color);
+        const categoryLabels = Object.keys(categorySummary);
+        const categoryAmounts = Object.values(categorySummary).map(cat => cat.expense);
+
+        return new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: categoryLabels,
+                datasets: [{
+                    data: categoryAmounts,
+                    backgroundColor: categoryColors,
+                    borderWidth: 0
                 }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                legend: {
+                    position: 'right',
+                    align: 'center'
+                },
+                tooltips: {
+                    callbacks: {
+                        label: function(tooltipItem, data) {
+                            const value = data.datasets[0].data[tooltipItem.index];
+                            const percentage = ((value / categoryAmounts.reduce((a, b) => a + b)) * 100).toFixed(1);
+                            return `${data.labels[tooltipItem.index]}: $${value.toLocaleString()} (${percentage}%)`;
+                        }
+                    }
+                },
+                cutoutPercentage: 75
             }
-        }
-    });
-}
+        });
+    }
 
-function initializeCategoryChart(ctx) {
-    new Chart(ctx.getContext('2d'), {
-        type: 'doughnut',
-        data: {
-            labels: ['Housing', 'Food', 'Transport', 'Entertainment'],
-            datasets: [{
-                data: [1200, 800, 400, 300],
-                backgroundColor: [
-                    '#3498db',
-                    '#2ecc71',
-                    '#e74c3c',
-                    '#f1c40f'
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            legend: {
-                position: 'right'
-            }
-        }
-    });
-}
+    // Update Cash Flow Chart data
+    function updateCashFlowChart(chart, days) {
+        // Here you would fetch new data based on the selected period
+        // For now, we'll just update with dummy data
+        const newData = generateDummyData(days);
+        chart.data.labels = newData.labels;
+        chart.data.datasets[0].data = newData.income;
+        chart.data.datasets[1].data = newData.expenses;
+        chart.update();
+    }
 
-// Form Handling Functions
-function initializeFormHandling() {
-    const filterForm = document.getElementById('filterForm');
+    // Update Category Chart type
+    function updateCategoryChartType(chart, newType) {
+        chart.config.type = newType;
+        chart.update();
+    }
+
+    // Handle delete confirmation
+    window.confirmDelete = function(event) {
+        return confirm('Are you sure you want to delete this transaction? This action cannot be undone.');
+    };
+
+    // Add debounce function for search
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    // Handle search input
     const searchInput = document.querySelector('input[type="search"]');
-
-    if (searchInput && filterForm) {
+    if (searchInput) {
         searchInput.addEventListener('input', debounce(() => {
-            filterForm.submit();
+            document.getElementById('filterForm').submit();
         }, 500));
     }
-}
-
-// Utility Functions
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-// Color Utility Functions
-function getContrastColor(hexcolor) {
-    // Convert hex to RGB
-    const r = parseInt(hexcolor.slice(1,3),16);
-    const g = parseInt(hexcolor.slice(3,5),16);
-    const b = parseInt(hexcolor.slice(5,7),16);
-
-    // Calculate luminance
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-
-    return luminance > 0.5 ? '#000000' : '#FFFFFF';
-}
+});

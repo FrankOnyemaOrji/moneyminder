@@ -1,129 +1,158 @@
-from app import db
-from app.models import BaseModel
-from datetime import datetime
-
-
-class Category(db.Model, BaseModel):
+class Category:
     """
-    Category Model for organizing transactions
+    Category class for managing preset categories and their tags
+    Note: This is now a regular class, not a database model
     """
-    __tablename__ = 'categories'
 
-    name = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text)
-    user_id = db.Column(db.String(50), db.ForeignKey('users.id'), nullable=False)
-    parent_id = db.Column(db.String(50), db.ForeignKey('categories.id'))
-    icon = db.Column(db.String(50), default='tag')  # FontAwesome icon name
-    color = db.Column(db.String(50), default='blue')  # Color code for charts
-    is_active = db.Column(db.Boolean, default=True)
-    is_budget_tracked = db.Column(db.Boolean, default=True)
-
-    # Relationships
-    transactions = db.relationship('Transaction', backref='category', lazy='dynamic')
-    subcategories = db.relationship(
-        'Category',
-        backref=db.backref('parent', remote_side='Category.id'),
-        lazy='dynamic'
-    )
-    budgets = db.relationship('Budget', backref='category', lazy='dynamic')
-
-    # Category icon options with their display names
-    ICON_CHOICES = {
-        'tag': 'Tag',
-        'shopping-cart': 'Shopping',
-        'home': 'Home',
-        'car': 'Transport',
-        'utensils': 'Food',
-        'medkit': 'Healthcare',
-        'graduation-cap': 'Education',
-        'gamepad': 'Entertainment',
-        'gift': 'Gift',
-        'plane': 'Travel',
-        'piggy-bank': 'Savings',
-        'money-bill': 'Salary',
-        'chart-line': 'Investment',
-        'ellipsis-h': 'Other'
+    # Define preset categories with their colors and icons
+    PRESET_CATEGORIES = {
+        'Shopping': {'color': '#4299E1', 'icon': 'shopping-cart'},
+        'Home': {'color': '#48BB78', 'icon': 'home'},
+        'Transport': {'color': '#ED8936', 'icon': 'car'},
+        'Food': {'color': '#F56565', 'icon': 'utensils'},
+        'Healthcare': {'color': '#9F7AEA', 'icon': 'hospital'},
+        'Education': {'color': '#667EEA', 'icon': 'graduation-cap'},
+        'Entertainment': {'color': '#F687B3', 'icon': 'film'},
+        'Gift': {'color': '#ED64A6', 'icon': 'gift'},
+        'Travel': {'color': '#4FD1C5', 'icon': 'plane'},
+        'Savings': {'color': '#68D391', 'icon': 'piggy-bank'},
+        'Salary': {'color': '#4CAF50', 'icon': 'money-bill-wave'},
+        'Investment': {'color': '#FFD700', 'icon': 'chart-line'}
     }
 
-    # Category color options with their display names and hex codes
-    COLOR_CHOICES = {
-        'blue': {'name': 'Blue', 'code': '#3498db'},
-        'green': {'name': 'Green', 'code': '#2ecc71'},
-        'red': {'name': 'Red', 'code': '#e74c3c'},
-        'yellow': {'name': 'Yellow', 'code': '#f1c40f'},
-        'purple': {'name': 'Purple', 'code': '#9b59b6'},
-        'orange': {'name': 'Orange', 'code': '#e67e22'},
-        'teal': {'name': 'Teal', 'code': '#1abc9c'},
-        'pink': {'name': 'Pink', 'code': '#e84393'},
-        'gray': {'name': 'Gray', 'code': '#95a5a6'}
+    # Tags/subcategories for each category
+    CATEGORY_TAGS = {
+        'Shopping': {
+            'Subcategories': [
+                'Clothing', 'Electronics', 'Groceries', 'Accessories', 'Furniture',
+                'Gadgets', 'Books', 'Jewelry', 'Cosmetics', 'Sporting Goods'
+            ]
+        },
+        'Home': {
+            'Subcategories': [
+                'Rent', 'Utilities', 'Repairs', 'Furniture', 'Interior Decoration',
+                'Gardening', 'Cleaning Services', 'Home Insurance', 'Smart Home Devices',
+                'Pest Control'
+            ]
+        },
+        'Transport': {
+            'Subcategories': [
+                'Fuel', 'Car Insurance', 'Public Transport', 'Vehicle Maintenance',
+                'Taxis/Ride-sharing', 'Parking Fees', 'Car Rentals', 'Road Taxes',
+                'Air Travel', 'Vehicle Purchase'
+            ]
+        },
+        'Food': {
+            'Subcategories': [
+                'Fruits', 'Vegetables', 'Proteins (Chicken, Fish, Beef)', 'Dairy Products',
+                'Snacks', 'Beverages', 'Organic Foods', 'Bakery Items', 'Ready-to-Eat Meals',
+                'Dining Out'
+            ]
+        },
+        'Healthcare': {
+            'Subcategories': [
+                'Hospital Visits', 'Medications', 'Health Insurance', 'Dental Care', 'Eye Care',
+                'Surgeries', 'Mental Health Services', 'Physical Therapy', 'Wellness Products',
+                'Vaccinations'
+            ]
+        },
+        'Education': {
+            'Subcategories': [
+                'Tuition Fees', 'Books', 'Stationery', 'Online Courses', 'Uniforms',
+                'Extracurricular Activities', 'College Applications', 'Test Preparation',
+                'Tutoring Services', 'Educational Subscriptions'
+            ]
+        },
+        'Entertainment': {
+            'Subcategories': [
+                'Movies', 'Concerts', 'Video Games', 'Streaming Services', 'Amusement Parks',
+                'Nightlife (Bars, Clubs)', 'Hobbies (Crafting, Collecting)', 'Sports Events',
+                'Subscription Boxes', 'Music Equipment'
+            ]
+        },
+        'Gift': {
+            'Subcategories': [
+                'Birthdays', 'Anniversaries', 'Weddings', 'Festive Seasons', 'Personalized Gifts',
+                'Electronics', 'Jewelry', 'Home Décor', 'Gift Cards', 'Flowers and Chocolates'
+            ]
+        },
+        'Travel': {
+            'Subcategories': [
+                'Airfare', 'Hotels', 'Transportation (Car Rentals, Public Transport)', 'Meals',
+                'Tour Packages', 'Sightseeing', 'Travel Insurance', 'Souvenirs', 'Cruise',
+                'Visa Applications'
+            ]
+        },
+        'Savings': {
+            'Subcategories': [
+                'Emergency Fund', 'Retirement Fund', 'High-Interest Savings', 'Recurring Deposits',
+                'Fixed Deposits', 'Education Savings', 'Travel Savings', 'House Savings',
+                'Insurance-Linked Savings', 'Technology Upgrades Savings'
+            ]
+        },
+        'Salary': {
+            'Subcategories': [
+                'Base Pay', 'Bonuses', 'Overtime', 'Allowances (Housing, Travel)', 'Gratuity',
+                'Commission', 'Severance', 'Perks (Health Benefits, Gym)', 'Stock Options',
+                'Profit Sharing'
+            ]
+        },
+        'Investment': {
+            'Subcategories': [
+                'Stocks', 'Bonds', 'Real Estate', 'Mutual Funds', 'Cryptocurrency',
+                'Commodities (Gold, Silver)', 'Startups', 'ETFs (Exchange-Traded Funds)',
+                'Art and Collectibles', 'Fixed Income Plans'
+            ]
+        }
     }
 
-    def __init__(self, name, user_id, description=None, parent_id=None,
-                 icon='tag', color='blue', is_active=True, is_budget_tracked=True):
-        self.name = name
-        self.user_id = user_id
-        self.description = description
-        self.parent_id = parent_id
-        self.icon = icon
-        self.color = color
-        self.is_active = is_active
-        self.is_budget_tracked = is_budget_tracked
-
-    def __repr__(self):
-        return f'<Category {self.name}>'
-
-    def to_dict(self):
-        """Convert category to dictionary with additional properties"""
+    @classmethod
+    def get_all_categories(cls):
+        """Get all preset categories with their details"""
         return {
-            'id': self.id,
-            'name': self.name,
-            'description': self.description,
-            'parent_id': self.parent_id,
-            'icon': self.icon,
-            'color': self.color,
-            'color_code': self.COLOR_CHOICES[self.color]['code'],
-            'is_active': self.is_active,
-            'is_budget_tracked': self.is_budget_tracked,
-            'created_at': self.created_at.isoformat(),
-            'updated_at': self.updated_at.isoformat(),
-            'has_subcategories': self.subcategories.count() > 0
+            name: {
+                'color': details['color'],
+                'icon': details['icon'],
+                'tags': cls.CATEGORY_TAGS[name]['Subcategories']
+            }
+            for name, details in cls.PRESET_CATEGORIES.items()
         }
 
-    def get_subcategories(self):
-        """Get all subcategories for this category"""
-        return self.subcategories.all()
+    @classmethod
+    def get_category_details(cls, category_name):
+        """Get details for a specific category"""
+        category = cls.PRESET_CATEGORIES.get(category_name, {})
+        tags = cls.CATEGORY_TAGS.get(category_name, {}).get('Subcategories', [])
 
-    def get_all_subcategories(self):
-        """Get all subcategories recursively"""
-        all_subcategories = []
-        for subcategory in self.subcategories:
-            all_subcategories.append(subcategory)
-            all_subcategories.extend(subcategory.get_all_subcategories())
-        return all_subcategories
+        return {
+            'name': category_name,
+            'color': category.get('color'),
+            'icon': category.get('icon'),
+            'tags': tags
+        }
 
-    def get_all_transactions(self):
-        """Get all transactions for this category including subcategories"""
-        all_transactions = list(self.transactions)
-        for subcategory in self.subcategories:
-            all_transactions.extend(subcategory.get_all_transactions())
-        return all_transactions
+    @classmethod
+    def get_tags_for_category(cls, category_name):
+        """Get tags/subcategories for a given category"""
+        return cls.CATEGORY_TAGS.get(category_name, {}).get('Subcategories', [])
 
-    def get_parent_chain(self):
-        """Get list of parent categories up to root"""
-        chain = []
-        current = self.parent
-        while current:
-            chain.append(current)
-            current = current.parent
-        return chain[::-1]  # Reverse to get root first
+    @classmethod
+    def validate_category(cls, category_name):
+        """Validate if a category exists"""
+        return category_name in cls.PRESET_CATEGORIES
 
-    def get_full_name(self):
-        """Get full category name including parent categories"""
-        chain = self.get_parent_chain()
-        chain.append(self)
-        return ' › '.join(category.name for category in chain)
+    @classmethod
+    def validate_tag(cls, category_name, tag_name):
+        """Validate if a tag exists for a category"""
+        tags = cls.get_tags_for_category(category_name)
+        return tag_name in tags
 
     @staticmethod
-    def get_color_hex(color_name):
-        """Get hex code for a color name"""
-        return Category.COLOR_CHOICES.get(color_name, {}).get('code', '#95a5a6')
+    def get_default_icon():
+        """Get default icon for unknown categories"""
+        return 'tag'
+
+    @staticmethod
+    def get_default_color():
+        """Get default color for unknown categories"""
+        return '#718096'

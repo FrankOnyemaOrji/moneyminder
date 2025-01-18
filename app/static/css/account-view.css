@@ -49,6 +49,8 @@
     transition: all 0.2s ease;
     text-decoration: none;
 }
+tr.income .amount { color: #059669; }
+tr.expense .amount { color: #dc2626; }
 
 .btn-primary {
     background-color: #2563eb;
@@ -295,8 +297,8 @@
     color: #dc2626;
 }
 
-/* Action Buttons */
-.actions {
+/* Table Actions */
+.table-actions {
     display: flex;
     gap: 0.5rem;
     justify-content: flex-end;
@@ -305,24 +307,24 @@
 .btn-icon {
     width: 32px;
     height: 32px;
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
-    border: none;
     border-radius: 6px;
-    color: #6b7280;
-    background: transparent;
-    cursor: pointer;
+    color: #64748b;
     transition: all 0.2s;
+    border: none;
+    background: none;
+    cursor: pointer;
 }
 
 .btn-icon:hover {
-    background: #f3f4f6;
-    color: #1f2937;
+    background-color: #f1f5f9;
+    color: #1a2b4b;
 }
 
-.btn-icon.delete-transaction:hover {
-    background: #fee2e2;
+.btn-icon.danger:hover {
+    background-color: #fee2e2;
     color: #dc2626;
 }
 
@@ -424,4 +426,20 @@
     .transactions-table {
         break-inside: avoid;
     }
+}
+.category-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.875rem;
+}
+/* Category Cell Styling */
+.category-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
 }

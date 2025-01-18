@@ -14,7 +14,7 @@ class Account(db.Model, BaseModel):
     user_id = db.Column(db.String(50), db.ForeignKey('users.id'), nullable=False)
 
     # Relationships
-    transactions = db.relationship('Transaction', backref='account', lazy='dynamic', cascade='all, delete-orphan')
+    transactions = db.relationship('Transaction', back_populates='account', lazy='dynamic', cascade='all, delete-orphan')
 
     def __repr__(self):
         return f'<Account {self.name}>'

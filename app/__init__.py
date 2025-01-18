@@ -48,14 +48,12 @@ def create_app():
         from .routes.main import main
         from .routes.accounts import accounts
         from .routes.transactions import transactions
-        from .routes.categories import categories
         from .routes.budgets import budgets
 
         app.register_blueprint(auth, url_prefix='/auth')
         app.register_blueprint(main)
         app.register_blueprint(accounts, url_prefix='/accounts')
         app.register_blueprint(transactions, url_prefix='/transactions')
-        app.register_blueprint(categories, url_prefix='/categories')
         app.register_blueprint(budgets, url_prefix='/budgets')
 
         @login_manager.user_loader
