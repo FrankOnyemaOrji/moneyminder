@@ -1,10 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Edit {{ account.name }}{% endblock %}
+{% block title %}Edit Account{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/account-edit.css') }}">
+{% endblock %}
 
 {% block content %}
 <div class="account-container">
-    <!-- Page Header -->
     <div class="page-header">
         <div class="header-content">
             <div class="header-title">
@@ -22,7 +25,6 @@
         </div>
     </div>
 
-    <!-- Account Summary -->
     <div class="account-summary-card">
         <div class="account-header">
             <div class="account-type-icon {{ account.account_type }}">
@@ -41,9 +43,8 @@
         </div>
     </div>
 
-    <!-- Edit Form -->
     <div class="form-card">
-        <form class="account-edit-form" method="post" novalidate>
+        <form class="account-edit-form" method="post" action="{{ url_for('accounts.edit', account_id=account.id) }}" novalidate>
             {{ form.hidden_tag() }}
 
             <div class="form-grid">
@@ -72,12 +73,9 @@
                         {{ form.currency(class="form-control", data_current_currency=account.currency) }}
                         <i class="fas fa-chevron-down"></i>
                     </div>
-                    {% if form.currency.data != account.currency %}
-                        <span class="warning-message">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            Changing currency will not convert existing balances
-                        </span>
-                    {% endif %}
+                    {% for error in form.currency.errors %}
+                        <span class="error-message"><i class="fas fa-exclamation-circle"></i> {{ error }}</span>
+                    {% endfor %}
                 </div>
 
                 <div class="form-group">
@@ -87,18 +85,19 @@
                         {{ form.current_balance(class="form-control", disabled=true) }}
                     </div>
                     <span class="help-text">
-                        <i class="fas fa-info-circle"></i>
-                        Balance is updated through transactions
+                        <i class="fas fa-info-circle"></i> Balance is updated through transactions
                     </span>
                 </div>
 
                 <div class="form-group full-width">
                     {{ form.description.label(class="form-label") }}
-                    {{ form.description(class="form-control",
-                                      rows="3",
+                    {{ form.description(class="form-control", rows="3",
                                       placeholder="Enter account description (optional)",
                                       maxlength="500") }}
-                    <div class="character-counter"></div>
+                    <div class="character-counter">0/500</div>
+                    {% for error in form.description.errors %}
+                        <span class="error-message"><i class="fas fa-exclamation-circle"></i> {{ error }}</span>
+                    {% endfor %}
                 </div>
             </div>
 
@@ -135,7 +134,8 @@
                        class="btn btn-danger {% if account.balance != 0 %}disabled{% endif %}"
                        {% if account.balance != 0 %}
                        title="Cannot delete account with non-zero balance"
-                       {% endif %}>
+                       {% endif %}
+                       data-balance="{{ account.balance }}">
                         <i class="fas fa-trash"></i> Delete Account
                     </a>
                 </div>
@@ -143,14 +143,15 @@
                     <a href="{{ url_for('accounts.index') }}" class="btn btn-secondary">
                         <i class="fas fa-times"></i> Cancel
                     </a>
-                    {{ form.submit(class="btn btn-primary") }}
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
                 </div>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Notifications Container -->
 <div id="notifications" class="notifications-container"></div>
 {% endblock %}
 

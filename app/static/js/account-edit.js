@@ -1,100 +1,110 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Handle Account Delete Form
-    const deleteForm = document.querySelector('.delete-form');
-    const confirmDeleteBtn = document.querySelector('.btn-danger[type="submit"]');
-    const cancelBtn = document.querySelector('.btn-secondary');
+    const form = document.querySelector('.account-edit-form');
+    const descriptionField = document.querySelector('textarea[name="description"]');
+    const currencySelect = document.getElementById('currency');
+    const deleteBtn = document.querySelector('.btn-danger');
+    const characterCounter = document.querySelector('.character-counter');
 
-    if (deleteForm) {
-        deleteForm.addEventListener('submit', function(e) {
-            e.preventDefault();
+    if (form) {
+        initializeForm();
+    }
 
-            // Check if button is disabled due to non-zero balance
-            if (confirmDeleteBtn.disabled) {
-                showNotification('Cannot delete account with non-zero balance. Please clear the balance first.', 'error');
-                return;
-            }
+    // Initialize all form functionality
+    function initializeForm() {
+        // Add character counter for description
+        if (descriptionField && characterCounter) {
+            updateCharacterCount();
+            descriptionField.addEventListener('input', updateCharacterCount);
+        }
 
-            // Show loading state on button
-            confirmDeleteBtn.disabled = true;
-            const originalText = confirmDeleteBtn.innerHTML;
-            confirmDeleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
-
-            // Submit the form
-            fetch(deleteForm.action, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: new URLSearchParams(new FormData(deleteForm))
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showNotification('Account deleted successfully!', 'success');
-                    window.location.href = '/accounts';
-                } else {
-                    throw new Error(data.message || 'Failed to delete account');
+        // Handle currency change warning
+        if (currencySelect) {
+            const originalCurrency = currencySelect.getAttribute('data-current-currency');
+            currencySelect.addEventListener('change', function() {
+                if (this.value !== originalCurrency) {
+                    if (!confirm('Changing the currency may affect your transaction history. Are you sure you want to continue?')) {
+                        this.value = originalCurrency;
+                    }
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showNotification(error.message || 'An error occurred while deleting the account', 'error');
-                confirmDeleteBtn.disabled = false;
-                confirmDeleteBtn.innerHTML = originalText;
             });
-        });
+        }
 
-        // Handle cancel button
-        if (cancelBtn) {
-            cancelBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                window.history.back();
-            });
+        // Handle form submission
+        form.addEventListener('submit', handleFormSubmit);
+
+        // Handle delete button
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', handleDelete);
         }
     }
 
-    // Handle Account Edit Form
-    const editForm = document.querySelector('.account-edit-form');
-    if (editForm) {
-        const submitBtn = editForm.querySelector('button[type="submit"]');
+    // Update character count for description
+    function updateCharacterCount() {
+        const maxLength = 500;
+        const currentLength = descriptionField.value.length;
+        characterCounter.textContent = `${currentLength}/${maxLength}`;
 
-        editForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            // Show loading state
-            submitBtn.disabled = true;
-            const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-
-            // Submit the form
-            fetch(editForm.action, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: new URLSearchParams(new FormData(editForm))
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showNotification('Account updated successfully!', 'success');
-                    window.location.reload();
-                } else {
-                    throw new Error(data.message || 'Failed to update account');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showNotification(error.message || 'An error occurred while updating the account', 'error');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalText;
-            });
-        });
+        if (currentLength > maxLength * 0.9) {
+            characterCounter.classList.add('warning');
+        } else {
+            characterCounter.classList.remove('warning');
+        }
     }
 
-    // Utility function to show notifications
+    // Handle form submission
+    async function handleFormSubmit(e) {
+        e.preventDefault();
+        const submitButton = form.querySelector('button[type="submit"]');
+
+        try {
+            // Show loading state
+            submitButton.disabled = true;
+            const originalText = submitButton.innerHTML;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+            const formData = new FormData(form);
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showNotification('Account updated successfully', 'success');
+                setTimeout(() => window.location.href = '/accounts', 1000);
+            } else {
+                throw new Error(data.message || 'Failed to update account');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showNotification(error.message || 'An error occurred while updating the account', 'error');
+
+            // Reset button state
+            submitButton.disabled = false;
+            submitButton.innerHTML = originalText;
+        }
+    }
+
+    // Handle delete button click
+    function handleDelete(e) {
+        e.preventDefault();
+        const balance = parseFloat(deleteBtn.getAttribute('data-balance') || '0');
+
+        if (balance !== 0) {
+            showNotification('Cannot delete account with non-zero balance', 'error');
+            return;
+        }
+
+        if (confirm('Are you sure you want to delete this account? This action cannot be undone.')) {
+            window.location.href = deleteBtn.href;
+        }
+    }
+
+    // Show notification helper
     function showNotification(message, type = 'info') {
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
@@ -103,8 +113,13 @@ document.addEventListener('DOMContentLoaded', function() {
             <span>${message}</span>
         `;
 
-        document.body.appendChild(notification);
+        const container = document.getElementById('notifications') || document.body;
+        container.appendChild(notification);
+
+        // Show with animation
         setTimeout(() => notification.classList.add('show'), 10);
+
+        // Remove after delay
         setTimeout(() => {
             notification.classList.remove('show');
             setTimeout(() => notification.remove(), 300);

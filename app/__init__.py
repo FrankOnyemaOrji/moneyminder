@@ -18,6 +18,12 @@ def create_app():
     init_filters(app)
     app.config.from_object(Config)
 
+    @app.context_processor
+    def utility_processor():
+        return {
+            'Category': Category
+        }
+
     csrf = CSRFProtect()
     csrf.init_app(app)
 

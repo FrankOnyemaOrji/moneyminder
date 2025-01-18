@@ -1,339 +1,187 @@
-// document.addEventListener('DOMContentLoaded', function() {
-//     // Initialize all main functionalities
-//     initializeBalanceChart();
-//     initializeTransactionFilters();
-//     initializeTableSorting();
-//     initializeDeleteModal();
-//     initializeDateRangeControls();
-// });
-//
-// // Chart functionality
-// function initializeBalanceChart() {
-//     const chartCanvas = document.getElementById('balanceChart');
-//     const timeRangeSelect = document.getElementById('timeRange');
-//     const accountId = window.location.pathname.split('/').pop();
-//     let balanceChart = null;
-//
-//     if (!chartCanvas || !timeRangeSelect) return;
-//
-//     async function loadBalanceHistory(days) {
-//         try {
-//             const response = await fetch(`/api/${accountId}/balance-history?days=${days}`);
-//             if (!response.ok) throw new Error('Network response was not ok');
-//
-//             const data = await response.json();
-//             if (data.success && data.balances) {
-//                 updateChart(data.balances);
-//             }
-//         } catch (error) {
-//             console.error('Error loading balance history:', error);
-//             showChartError();
-//         }
-//     }
-//
-//     function updateChart(balances) {
-//         const ctx = chartCanvas.getContext('2d');
-//         const currencySymbol = document.querySelector('.balance-info .amount')?.textContent.trim()[0] || '$';
-//
-//         if (balanceChart) {
-//             balanceChart.destroy();
-//         }
-//
-//         balanceChart = new Chart(ctx, {
-//             type: 'line',
-//             data: {
-//                 labels: balances.map(item => formatDate(item.date)),
-//                 datasets: [{
-//                     label: 'Balance',
-//                     data: balances.map(item => item.balance),
-//                     borderColor: '#2563eb',
-//                     backgroundColor: 'rgba(37, 99, 235, 0.1)',
-//                     fill: true,
-//                     tension: 0.4,
-//                     pointRadius: 3,
-//                     pointHoverRadius: 5
-//                 }]
-//             },
-//             options: {
-//                 responsive: true,
-//                 maintainAspectRatio: false,
-//                 plugins: {
-//                     legend: { display: false },
-//                     tooltip: {
-//                         mode: 'index',
-//                         intersect: false,
-//                         callbacks: {
-//                             label: context => `Balance: ${currencySymbol}${formatCurrency(context.parsed.y)}`
-//                         }
-//                     }
-//                 },
-//                 scales: {
-//                     x: {
-//                         grid: { display: false },
-//                         ticks: { maxTicksLimit: 7 }
-//                     },
-//                     y: {
-//                         beginAtZero: false,
-//                         grid: { color: 'rgba(0, 0, 0, 0.1)' },
-//                         ticks: {
-//                             callback: value => currencySymbol + formatCurrency(value)
-//                         }
-//                     }
-//                 }
-//             }
-//         });
-//     }
-//
-//     function showChartError() {
-//         chartCanvas.innerHTML = `
-//             <div class="chart-error">
-//                 <i class="fas fa-exclamation-circle"></i>
-//                 <p>Error loading chart data</p>
-//             </div>
-//         `;
-//     }
-//
-//     // Initial load and event listener
-//     loadBalanceHistory(timeRangeSelect.value);
-//     timeRangeSelect.addEventListener('change', () => loadBalanceHistory(timeRangeSelect.value));
-// }
-//
-// // Transaction filters functionality
-// function initializeTransactionFilters() {
-//     const searchInput = document.getElementById('searchTransactions');
-//     const typeFilter = document.getElementById('filterType');
-//     const startDate = document.getElementById('startDate');
-//     const endDate = document.getElementById('endDate');
-//
-//     if (!searchInput || !typeFilter || !startDate || !endDate) return;
-//
-//     const elements = [searchInput, typeFilter, startDate, endDate];
-//     elements.forEach(element => {
-//         element.addEventListener('change', filterTransactions);
-//     });
-//     searchInput.addEventListener('input', filterTransactions);
-//
-//     function filterTransactions() {
-//         const rows = document.querySelectorAll('.transactions-table tbody tr');
-//         const searchTerm = searchInput.value.toLowerCase();
-//         const selectedType = typeFilter.value;
-//         const startDateVal = new Date(startDate.value);
-//         const endDateVal = new Date(endDate.value);
-//
-//         let visibleCount = 0;
-//
-//         rows.forEach(row => {
-//             const description = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
-//             const type = row.classList.contains('income') ? 'income' : 'expense';
-//             const date = new Date(row.dataset.date);
-//
-//             const matchesSearch = description.includes(searchTerm);
-//             const matchesType = selectedType === 'all' || type === selectedType;
-//             const matchesDate = date >= startDateVal && date <= endDateVal;
-//
-//             const isVisible = matchesSearch && matchesType && matchesDate;
-//             row.style.display = isVisible ? '' : 'none';
-//             if (isVisible) visibleCount++;
-//         });
-//
-//         updateEmptyState(visibleCount === 0);
-//         updateTransactionCount(visibleCount);
-//     }
-// }
-//
-// // Date range controls
-// function initializeDateRangeControls() {
-//     const timeRange = document.getElementById('timeRange');
-//     const startDate = document.getElementById('startDate');
-//     const endDate = document.getElementById('endDate');
-//
-//     if (!timeRange || !startDate || !endDate) return;
-//
-//     timeRange.addEventListener('change', function() {
-//         const days = parseInt(this.value);
-//         const end = new Date();
-//         const start = new Date();
-//         start.setDate(start.getDate() - days);
-//
-//         startDate.value = formatDateForInput(start);
-//         endDate.value = formatDateForInput(end);
-//
-//         // Trigger filter update
-//         startDate.dispatchEvent(new Event('change'));
-//     });
-// }
-//
-// // Table sorting functionality
-// function initializeTableSorting() {
-//     const table = document.querySelector('.transactions-table');
-//     if (!table) return;
-//
-//     const headers = table.querySelectorAll('th.sortable');
-//     let currentSort = { column: 'date', direction: 'desc' };
-//
-//     headers.forEach(header => {
-//         header.addEventListener('click', () => {
-//             const column = header.dataset.sort;
-//             const direction = currentSort.column === column &&
-//                             currentSort.direction === 'asc' ? 'desc' : 'asc';
-//
-//             sortTable(table, column, direction);
-//             updateSortIcons(headers, header, direction);
-//             currentSort = { column, direction };
-//         });
-//     });
-// }
-//
-// // Delete modal functionality
-// function initializeDeleteModal() {
-//     const modal = document.getElementById('deleteModal');
-//     if (!modal) return;
-//
-//     let currentTransactionId = null;
-//
-//     // Setup delete button handlers
-//     document.querySelectorAll('.delete-transaction').forEach(button => {
-//         button.addEventListener('click', (e) => {
-//             e.preventDefault();
-//             currentTransactionId = button.dataset.id;
-//             openModal(modal);
-//         });
-//     });
-//
-//     // Setup modal close handlers
-//     modal.querySelectorAll('.modal-close').forEach(button => {
-//         button.addEventListener('click', () => closeModal(modal));
-//     });
-//
-//     // Setup delete confirmation
-//     const confirmButton = modal.querySelector('#confirmDelete');
-//     if (confirmButton) {
-//         confirmButton.addEventListener('click', () => {
-//             if (currentTransactionId) {
-//                 deleteTransaction(currentTransactionId);
-//             }
-//         });
-//     }
-//
-//     // Close modal on outside click
-//     window.addEventListener('click', (e) => {
-//         if (e.target === modal) {
-//             closeModal(modal);
-//         }
-//     });
-// }
-//
-// // Helper Functions
-// function formatCurrency(value) {
-//     return new Intl.NumberFormat('en-US', {
-//         minimumFractionDigits: 2,
-//         maximumFractionDigits: 2
-//     }).format(value);
-// }
-//
-// function formatDate(dateString) {
-//     return new Intl.DateTimeFormat('en-US', {
-//         month: 'short',
-//         day: 'numeric'
-//     }).format(new Date(dateString));
-// }
-//
-// function formatDateForInput(date) {
-//     return date.toISOString().split('T')[0];
-// }
-//
-// function updateEmptyState(isEmpty) {
-//     const container = document.querySelector('.transactions-table-container');
-//     const table = document.querySelector('.transactions-table');
-//     const existingEmptyState = container.querySelector('.empty-state');
-//
-//     if (!container || !table) return;
-//
-//     if (isEmpty) {
-//         table.style.display = 'none';
-//         if (!existingEmptyState) {
-//             container.insertAdjacentHTML('beforeend', `
-//                 <div class="empty-state">
-//                     <div class="empty-state-icon">
-//                         <i class="fas fa-search"></i>
-//                     </div>
-//                     <h3>No Matching Transactions</h3>
-//                     <p>Try adjusting your search criteria</p>
-//                 </div>
-//             `);
-//         }
-//     } else {
-//         table.style.display = '';
-//         if (existingEmptyState) {
-//             existingEmptyState.remove();
-//         }
-//     }
-// }
-//
-// function updateTransactionCount(count) {
-//     const subtitle = document.querySelector('.section-subtitle');
-//     if (subtitle) {
-//         subtitle.textContent = `${count} transactions found`;
-//     }
-// }
-//
-// function sortTable(table, column, direction) {
-//     const tbody = table.querySelector('tbody');
-//     const rows = Array.from(tbody.querySelectorAll('tr'));
-//
-//     const sortedRows = rows.sort((a, b) => {
-//         let aVal = getCellValue(a, column);
-//         let bVal = getCellValue(b, column);
-//
-//         if (column === 'amount') {
-//             aVal = parseFloat(aVal.replace(/[^0-9.-]+/g, ''));
-//             bVal = parseFloat(bVal.replace(/[^0-9.-]+/g, ''));
-//         } else if (column === 'date') {
-//             aVal = new Date(a.dataset.date);
-//             bVal = new Date(b.dataset.date);
-//         }
-//
-//         if (direction === 'desc') [aVal, bVal] = [bVal, aVal];
-//
-//         return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
-//     });
-//
-//     sortedRows.forEach(row => tbody.appendChild(row));
-// }
-//
-// function getCellValue(row, column) {
-//     const cell = row.querySelector(`td:nth-child(${getColumnIndex(column)})`);
-//     return cell ? cell.textContent.trim() : '';
-// }
-//
-// function getColumnIndex(column) {
-//     const indices = { 'date': 1, 'description': 2, 'category': 3, 'amount': 4 };
-//     return indices[column] || 1;
-// }
-//
-// function updateSortIcons(headers, activeHeader, direction) {
-//     headers.forEach(header => {
-//         const icon = header.querySelector('i');
-//         icon.className = 'fas fa-sort';
-//
-//         if (header === activeHeader) {
-//             icon.className = `fas fa-sort-${direction === 'asc' ? 'up' : 'down'}`;
-//         }
-//     });
-// }
-//
-// function showNotification(message, type = 'info') {
-//     const notification = document.createElement('div');
-//     notification.className = `notification ${type}`;
-//     notification.innerHTML = `
-//         <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
-//         <span>${message}</span>
-//     `;
-//
-//     document.body.appendChild(notification);
-//     setTimeout(() => notification.classList.add('show'), 10);
-//     setTimeout(() => {
-//         notification.classList.remove('show');
-//         setTimeout(() => notification.remove(), 300);
-//     }, 3000);
-// }
+document.addEventListener('DOMContentLoaded', function() {
+    initializeTransactionFilters();
+    initializeTableSorting();
+    initializeDeleteButtons();
+});
+
+// Initialize transaction filters
+function initializeTransactionFilters() {
+    const timeRange = document.getElementById('timeRange');
+    if (!timeRange) return;
+
+    timeRange.addEventListener('change', function() {
+        const days = this.value;
+        const accountId = getAccountIdFromUrl();
+        
+        // Update URL with new date range
+        const searchParams = new URLSearchParams(window.location.search);
+        searchParams.set('days', days);
+        const newUrl = `${window.location.pathname}?${searchParams.toString()}`;
+        window.location.href = newUrl;
+    });
+}
+
+// Initialize table sorting
+function initializeTableSorting() {
+    const table = document.querySelector('.transactions-table');
+    if (!table) return;
+
+    const headers = table.querySelectorAll('th.sortable');
+    let currentSort = { column: 'date', direction: 'desc' };
+
+    headers.forEach(header => {
+        header.addEventListener('click', () => {
+            const column = header.dataset.sort;
+            const direction = currentSort.column === column && 
+                            currentSort.direction === 'asc' ? 'desc' : 'asc';
+
+            sortTable(table, column, direction);
+            updateSortIcons(headers, header, direction);
+            currentSort = { column, direction };
+        });
+    });
+}
+
+// Initialize delete buttons
+function initializeDeleteButtons() {
+    const deleteButtons = document.querySelectorAll('.delete-transaction');
+    
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const transactionId = button.dataset.id;
+
+            if (confirm('Are you sure you want to delete this transaction? This action cannot be undone.')) {
+                try {
+                    const response = await fetch(`/transactions/${transactionId}/delete`, {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        showNotification('Transaction deleted successfully', 'success');
+                        // Remove the row from the table
+                        button.closest('tr').remove();
+                        // Check if table is empty
+                        checkTableEmpty();
+                    } else {
+                        throw new Error(data.message || 'Failed to delete transaction');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showNotification(error.message || 'An error occurred while deleting the transaction', 'error');
+                }
+            }
+        });
+    });
+}
+
+// Helper Functions
+function getAccountIdFromUrl() {
+    return window.location.pathname.split('/').pop();
+}
+
+function sortTable(table, column, direction) {
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+
+    const sortedRows = rows.sort((a, b) => {
+        let aVal = getCellValue(a, column);
+        let bVal = getCellValue(b, column);
+
+        if (column === 'amount') {
+            aVal = parseFloat(aVal.replace(/[^0-9.-]+/g, ''));
+            bVal = parseFloat(bVal.replace(/[^0-9.-]+/g, ''));
+        } else if (column === 'date') {
+            aVal = new Date(a.dataset.date);
+            bVal = new Date(b.dataset.date);
+        }
+
+        if (direction === 'desc') [aVal, bVal] = [bVal, aVal];
+
+        return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+    });
+
+    sortedRows.forEach(row => tbody.appendChild(row));
+}
+
+function getCellValue(row, column) {
+    const indices = {
+        'date': 0,
+        'description': 1,
+        'category': 2,
+        'amount': 3
+    };
+    const cell = row.querySelector(`td:nth-child(${indices[column] + 1})`);
+    return cell ? cell.textContent.trim() : '';
+}
+
+function updateSortIcons(headers, activeHeader, direction) {
+    headers.forEach(header => {
+        // Remove all sort classes
+        header.classList.remove('asc', 'desc');
+        
+        // Add appropriate class to active header
+        if (header === activeHeader) {
+            header.classList.add(direction);
+        }
+    });
+}
+
+function checkTableEmpty() {
+    const table = document.querySelector('.transactions-table');
+    const container = document.querySelector('.transactions-table-container');
+    const rows = table.querySelectorAll('tbody tr');
+
+    if (rows.length === 0) {
+        // Hide table
+        table.style.display = 'none';
+        
+        // Show empty state
+        const emptyState = document.createElement('div');
+        emptyState.className = 'empty-state';
+        emptyState.innerHTML = `
+            <i class="fas fa-receipt"></i>
+            <h3>No Transactions Found</h3>
+            <p>There are no transactions for the selected period.</p>
+            <a href="/transactions/create" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Transaction
+            </a>
+        `;
+        container.appendChild(emptyState);
+    }
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+        <span>${message}</span>
+    `;
+
+    // Add to container if it exists, otherwise add to body
+    const container = document.querySelector('.notifications-container') || document.body;
+    container.appendChild(notification);
+
+    // Show notification with animation
+    setTimeout(() => notification.classList.add('show'), 10);
+
+    // Remove after delay
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Export functions for potential reuse
+window.AccountView = {
+    initializeTransactionFilters,
+    initializeTableSorting,
+    initializeDeleteButtons,
+    showNotification
+};

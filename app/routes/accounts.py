@@ -116,18 +116,39 @@ def edit(account_id):
     form.current_balance.data = account.balance
 
     if form.validate_on_submit():
-        account.name = form.name.data
-        account.account_type = form.account_type.data
-        account.currency = form.currency.data
-        account.description = form.description.data
-
         try:
-            account.update()
+            account.name = form.name.data
+            account.account_type = form.account_type.data
+            account.currency = form.currency.data
+            account.description = form.description.data
+
+            db.session.commit()
+
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': True})
+
             flash('Account updated successfully!', 'success')
             return redirect(url_for('accounts.index'))
+
         except Exception as e:
-            flash('An error occurred while updating the account.', 'error')
+            db.session.rollback()
+            error_message = 'An error occurred while updating the account'
+
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({
+                    'success': False,
+                    'message': error_message
+                }), 400
+
+            flash(error_message, 'error')
             return redirect(url_for('accounts.edit', account_id=account_id))
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' and form.errors:
+        return jsonify({
+            'success': False,
+            'message': 'Please correct the errors in the form',
+            'errors': form.errors
+        }), 400
 
     return render_template('accounts/edit.html', form=form, account=account)
 
@@ -135,6 +156,7 @@ def edit(account_id):
 @accounts.route('/<account_id>/delete', methods=['GET', 'POST'])
 @login_required
 def delete(account_id):
+    """Delete an account"""
     account = Account.query.filter_by(
         id=account_id,
         user_id=current_user.id
@@ -145,6 +167,7 @@ def delete(account_id):
     if form.validate_on_submit():
         if account.balance == 0:
             try:
+                # Delete all associated transactions first
                 Transaction.query.filter_by(account_id=account.id).delete()
                 db.session.delete(account)
                 db.session.commit()
@@ -154,26 +177,34 @@ def delete(account_id):
 
                 flash('Account deleted successfully!', 'success')
                 return redirect(url_for('accounts.index'))
+
             except Exception as e:
                 db.session.rollback()
+                error_message = 'An error occurred while deleting the account'
+
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                     return jsonify({
                         'success': False,
-                        'message': 'Error deleting account'
+                        'message': error_message
                     }), 400
-                flash('Error deleting account.', 'error')
+
+                flash(error_message, 'error')
+                return redirect(url_for('accounts.delete', account_id=account_id))
         else:
+            error_message = 'Cannot delete account with non-zero balance'
+
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return jsonify({
                     'success': False,
-                    'message': 'Cannot delete account with non-zero balance'
+                    'message': error_message
                 }), 400
-            flash('Cannot delete account with non-zero balance.', 'error')
+
+            flash(error_message, 'error')
 
     return render_template('accounts/delete.html', form=form, account=account)
 
 
-@accounts.route('/<account_id>')
+@accounts.route('/<account_id>', methods=['GET'])
 @login_required
 def view(account_id):
     """View account details and transaction history"""
@@ -211,6 +242,7 @@ def view(account_id):
                            total_expenses=total_expenses,
                            start_date=start_date,
                            end_date=end_date)
+
 
 
 # Update this route definition in accounts.py

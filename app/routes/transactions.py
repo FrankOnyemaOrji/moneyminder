@@ -1,6 +1,3 @@
-from collections import defaultdict
-from operator import or_
-
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
@@ -12,6 +9,7 @@ from app.models.transaction import Transaction
 from app.models.account import Account
 from app.models.category import Category
 from app.forms.transaction import TransactionForm, TransactionFilterForm, BulkTransactionForm
+from app.forms.category import CategoryForm
 
 transactions = Blueprint('transactions', __name__)
 
@@ -19,8 +17,9 @@ transactions = Blueprint('transactions', __name__)
 @transactions.route('/')
 @login_required
 def index():
-    """List all transactions with filtering"""
+    """List all transactions with filtering and category management"""
     form = TransactionFilterForm(current_user)
+    category_form = CategoryForm(current_user)
 
     # Get filter parameters
     start_date = request.args.get('start_date',
@@ -34,7 +33,7 @@ def index():
     max_amount = request.args.get('max_amount', type=float)
     search = request.args.get('search', '')
 
-    # Build query
+    # Build transaction query
     query = Transaction.query.filter_by(user_id=current_user.id)
 
     if start_date:
@@ -61,12 +60,34 @@ def index():
     total_income = sum(t.amount for t in transactions if t.transaction_type == 'income')
     total_expenses = sum(t.amount for t in transactions if t.transaction_type == 'expense')
 
+    # Get categories for tree view
+    root_categories = current_user.categories.filter_by(parent_id=None).all()
+
+    # Get category statistics for the period
+    category_stats = {}
+    for transaction in transactions:
+        cat_id = transaction.category_id
+        if cat_id not in category_stats:
+            category_stats[cat_id] = {
+                'name': transaction.category.name,
+                'income': 0,
+                'expenses': 0,
+                'count': 0
+            }
+        if transaction.transaction_type == 'income':
+            category_stats[cat_id]['income'] += float(transaction.amount)
+        else:
+            category_stats[cat_id]['expenses'] += float(transaction.amount)
+        category_stats[cat_id]['count'] += 1
+
     return render_template('transactions/list.html',
                            transactions=transactions,
                            total_income=total_income,
                            total_expenses=total_expenses,
-                           form=form)
-
+                           categories=root_categories,
+                           category_stats=category_stats,
+                           form=form,
+                           category_form=category_form)
 
 
 @transactions.route('/create', methods=['GET', 'POST'])
@@ -74,11 +95,6 @@ def index():
 def create():
     """Create a new transaction"""
     form = TransactionForm(current_user)
-
-    # Pre-select account if provided in URL
-    account_id = request.args.get('account_id')
-    if account_id:
-        form.account_id.data = account_id
 
     if form.validate_on_submit():
         try:
@@ -91,43 +107,11 @@ def create():
                 category_id=form.category_id.data,
                 user_id=current_user.id
             )
-
-            # Handle recurring transactions
-            if form.is_recurring.data and form.recurrence_interval.data:
-                current_date = form.date.data
-                end_date = form.recurrence_end_date.data or (current_date + timedelta(days=365))
-
-                intervals = {
-                    'daily': timedelta(days=1),
-                    'weekly': timedelta(weeks=1),
-                    'monthly': timedelta(days=30),
-                    'yearly': timedelta(days=365)
-                }
-
-                interval = intervals[form.recurrence_interval.data]
-
-                while current_date <= end_date:
-                    if current_date > form.date.data:
-                        transaction = Transaction(
-                            amount=form.amount.data,
-                            transaction_type=form.transaction_type.data,
-                            description=form.description.data,
-                            date=current_date,
-                            account_id=form.account_id.data,
-                            category_id=form.category_id.data,
-                            user_id=current_user.id
-                        )
-                        transaction.save()
-                    current_date += interval
-            else:
-                transaction.save()
-
+            transaction.save()
             flash('Transaction created successfully!', 'success')
             return redirect(url_for('transactions.index'))
-
         except Exception as e:
-            flash('Error creating transaction: ' + str(e), 'error')
-            return redirect(url_for('transactions.create'))
+            flash(f'Error creating transaction: {str(e)}', 'error')
 
     return render_template('transactions/create.html', form=form)
 
@@ -204,7 +188,6 @@ def import_transactions():
             for row in csv_reader:
                 try:
                     if form.has_headers.data:
-                        # Assuming CSV columns match model fields
                         transaction = Transaction(
                             amount=float(row['amount']),
                             transaction_type=row['type'],
@@ -215,7 +198,6 @@ def import_transactions():
                             user_id=current_user.id
                         )
                     else:
-                        # Assuming fixed column order
                         transaction = Transaction(
                             amount=float(row[0]),
                             transaction_type=row[1],

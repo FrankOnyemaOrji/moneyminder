@@ -3,156 +3,321 @@
 {% block title %}Transactions{% endblock %}
 
 {% block styles %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.css">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/transactions.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/transactions.css') }}">
 {% endblock %}
 
 {% block content %}
-<div class="transactions-container">
-    <div class="page-header">
-        <div class="header-content">
-            <div class="header-main">
-                <h1 class="text-2xl font-bold text-gray-900 mb-4">Transactions</h1>
-                <div class="stats-grid">
-                    <div class="stat-card income">
-                        <span class="stat-label">Total Income</span>
-                        <span class="stat-value">+{{ "${:,.2f}".format(total_income) }}</span>
-                    </div>
-                    <div class="stat-card expenses">
-                        <span class="stat-label">Total Expenses</span>
-                        <span class="stat-value">-{{ "${:,.2f}".format(total_expenses) }}</span>
-                    </div>
-                    <div class="stat-card net">
-                        <span class="stat-label">Net Amount</span>
-                        <span class="stat-value {{ 'positive' if total_income > total_expenses else 'negative' }}">
+    <div class="transactions-container">
+        <div class="page-header">
+            <div class="header-content">
+                <div class="header-main">
+                    <h1 class="text-2xl font-bold text-gray-900 mb-4">Transactions</h1>
+                    <div class="stats-grid">
+                        <div class="stat-card income">
+                            <span class="stat-label">Total Income</span>
+                            <span class="stat-value">+{{ "${:,.2f}".format(total_income) }}</span>
+                        </div>
+                        <div class="stat-card expenses">
+                            <span class="stat-label">Total Expenses</span>
+                            <span class="stat-value">-{{ "${:,.2f}".format(total_expenses) }}</span>
+                        </div>
+                        <div class="stat-card net">
+                            <span class="stat-label">Net Amount</span>
+                            <span class="stat-value {{ 'positive' if total_income > total_expenses else 'negative' }}">
                             {{ "${:,.2f}".format(total_income - total_expenses) }}
                         </span>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="header-actions">
-                <a href="{{ url_for('transactions.create') }}" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> New Transaction
-                </a>
-                <a href="{{ url_for('transactions.import_transactions') }}" class="btn btn-secondary">
-                    <i class="fas fa-file-import"></i> Import
-                </a>
+                <div class="header-actions">
+                    <a href="{{ url_for('transactions.create') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> New Transaction
+                    </a>
+                    <a href="{{ url_for('transactions.import_transactions') }}" class="btn btn-secondary">
+                        <i class="fas fa-file-import"></i> Import
+                    </a>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="charts-section">
-        <div class="chart-container">
-            <h3>Cash Flow</h3>
-            <canvas id="cashFlowChart"></canvas>
-        </div>
-        <div class="chart-container">
-            <h3>Category Breakdown</h3>
-            <canvas id="categoryChart"></canvas>
-        </div>
-    </div>
+        <div class="page-content">
+            <!-- Categories Panel -->
+            <div class="categories-panel">
+                <div class="panel-header">
+                    <h2>Categories</h2>
+                    <button type="button" class="btn btn-primary" onclick="showCategoryModal('create')">
+                        <i class="fas fa-plus"></i> Add Category
+                    </button>
+                </div>
 
-    <div class="filters-panel">
-        <form id="filterForm" method="get" class="filters-form">
-            <div class="form-group">
-                {{ form.start_date.label }}
-                {{ form.start_date(class="form-control") }}
-            </div>
-            <div class="form-group">
-                {{ form.end_date.label }}
-                {{ form.end_date(class="form-control") }}
-            </div>
-            <div class="form-group">
-                {{ form.type_filter.label }}
-                {{ form.type_filter(class="form-control") }}
-            </div>
-            <div class="form-group">
-                {{ form.account_filter.label }}
-                {{ form.account_filter(class="form-control") }}
-            </div>
-            <div class="form-group">
-                {{ form.category_filter.label }}
-                {{ form.category_filter(class="form-control") }}
-            </div>
-            <div class="form-group">
-                {{ form.min_amount.label }}
-                {{ form.min_amount(class="form-control", placeholder="Min amount") }}
-            </div>
-            <div class="form-group">
-                {{ form.max_amount.label }}
-                {{ form.max_amount(class="form-control", placeholder="Max amount") }}
-            </div>
-            <div class="form-group">
-                {{ form.search(class="form-control", placeholder="Search transactions...") }}
-            </div>
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Apply Filters</button>
-                <a href="{{ url_for('transactions.index') }}" class="btn btn-secondary">Reset</a>
-            </div>
-        </form>
-    </div>
+                <!-- Category Search -->
+                <div class="search-box">
+                    <input type="text" id="categorySearch" class="form-control"
+                           placeholder="Search categories...">
+                </div>
 
-    <div class="transactions-table-container">
-        <table class="transactions-table">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Description</th>
-                    <th>Category</th>
-                    <th>Account</th>
-                    <th>Amount</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for transaction in transactions %}
-                <tr class="{{ transaction.transaction_type }}">
-                    <td>{{ moment(transaction.date).format('LL') }}</td>
-                    <td>{{ transaction.description }}</td>
-                    <td>{{ transaction.category.name }}</td>
-                    <td>{{ transaction.account.name }}</td>
-                    <td class="amount">
-                        {{ "+" if transaction.transaction_type == 'income' else "-" }}
-                        {{ "${:,.2f}".format(transaction.amount) }}
-                    </td>
-                    <td>
-                        <div class="flex gap-2 justify-end">
-                            <a href="{{ url_for('transactions.edit', transaction_id=transaction.id) }}"
-                               class="btn-icon" title="Edit">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <form method="post"
-                                  action="{{ url_for('transactions.delete', transaction_id=transaction.id) }}"
-                                  class="inline"
-                                  onsubmit="return confirm('Are you sure you want to delete this transaction?');">
-                                <button type="submit" class="btn-icon danger" title="Delete">
-                                    <i class="fas fa-trash"></i>
+                <div class="categories-tree">
+                    {% macro render_category(category) %}
+                        <div class="category-item" data-id="{{ category.id }}">
+                            <div class="category-header"
+                                 style="border-left: 4px solid {{ category.get_color_hex(category.color) }}">
+                                <button class="toggle-btn" onclick="toggleSubcategories(this)">
+                                    <i class="fas fa-chevron-right"></i>
                                 </button>
-                            </form>
+                                <i class="fas fa-{{ category.icon }} category-icon"
+                                   style="color: {{ category.get_color_hex(category.color) }}"></i>
+                                <span class="category-name">{{ category.name }}</span>
+                                {% if not category.is_active %}
+                                    <span class="category-badge inactive">Inactive</span>
+                                {% endif %}
+                                {% if not category.is_budget_tracked %}
+                                    <span class="category-badge">Not Budgeted</span>
+                                {% endif %}
+                                <div class="category-actions">
+                                    <button onclick="showCategoryModal('edit', '{{ category.id }}')"
+                                            class="btn-icon" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button onclick="deleteCategory('{{ category.id }}')"
+                                            class="btn-icon danger" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% if category.subcategories.count() > 0 %}
+                                <div class="subcategories" style="display: none;">
+                                    {% for subcategory in category.subcategories %}
+                                        {{ render_category(subcategory) }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
                         </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                    {% endmacro %}
 
-        {% if not transactions %}
-        <div class="empty-state">
-            <div class="empty-state-icon">
-                <i class="fas fa-receipt"></i>
+                    {% for category in categories %}
+                        {{ render_category(category) }}
+                    {% endfor %}
+                </div>
             </div>
-            <h3>No Transactions Found</h3>
-            <p>Start by adding your first transaction or adjust your filters.</p>
-            <a href="{{ url_for('transactions.create') }}" class="btn btn-primary mt-4">
-                Add Transaction
-            </a>
+
+            <div class="main-content">
+                <div class="charts-section">
+                    <div class="chart-container">
+                        <h3>Cash Flow</h3>
+                        <canvas id="cashFlowChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Category Breakdown</h3>
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="filters-panel">
+                    <form id="filterForm" method="get" class="filters-form">
+                        <div class="form-group">
+                            {{ form.start_date.label }}
+                            {{ form.start_date(class="form-control") }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.end_date.label }}
+                            {{ form.end_date(class="form-control") }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.type_filter.label }}
+                            {{ form.type_filter(class="form-control") }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.account_filter.label }}
+                            {{ form.account_filter(class="form-control") }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.category_filter.label }}
+                            {{ form.category_filter(class="form-control") }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.min_amount.label }}
+                            {{ form.min_amount(class="form-control", placeholder="Min amount") }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.max_amount.label }}
+                            {{ form.max_amount(class="form-control", placeholder="Max amount") }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.search(class="form-control", placeholder="Search transactions...") }}
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Apply Filters</button>
+                            <a href="{{ url_for('transactions.index') }}" class="btn btn-secondary">Reset</a>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="transactions-table-container">
+                    <table class="transactions-table">
+                        <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Category</th>
+                            <th>Account</th>
+                            <th>Amount</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for transaction in transactions %}
+                            <tr class="{{ transaction.transaction_type }}">
+                                <td>{{ moment(transaction.date).format('LL') }}</td>
+                                <td>{{ transaction.description }}</td>
+                                <td>
+                                <span class="category-display">
+                                    <i class="fas fa-{{ transaction.category.icon }}"
+                                       style="color: {{ transaction.category.get_color_hex(transaction.category.color) }}">
+                                    </i>
+                                    {{ transaction.category.name }}
+                                </span>
+                                </td>
+                                <td>{{ transaction.account.name }}</td>
+                                <td class="amount">
+                                    {{ "+" if transaction.transaction_type == 'income' else "-" }}
+                                    {{ "${:,.2f}".format(transaction.amount) }}
+                                </td>
+                                <td>
+                                    <div class="flex gap-2 justify-end">
+                                        <a href="{{ url_for('transactions.edit', transaction_id=transaction.id) }}"
+                                           class="btn-icon" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form method="post"
+                                              action="{{ url_for('transactions.delete', transaction_id=transaction.id) }}"
+                                              class="inline"
+                                              onsubmit="return confirm('Are you sure you want to delete this transaction?');">
+                                            <button type="submit" class="btn-icon danger" title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+
+                    {% if not transactions %}
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <i class="fas fa-receipt"></i>
+                            </div>
+                            <h3>No Transactions Found</h3>
+                            <p>Start by adding your first transaction or adjust your filters.</p>
+                            <a href="{{ url_for('transactions.create') }}" class="btn btn-primary mt-4">
+                                Add Transaction
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-        {% endif %}
     </div>
-</div>
+
+    <!-- Category Modal -->
+    <div id="categoryModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <form id="categoryForm" method="post" class="category-form-grid">
+                <h3 id="modalTitle">Add Category</h3>
+
+                <!-- Basic Information -->
+                <div class="form-group">
+                    <label for="categoryName">Name</label>
+                    <input type="text" id="categoryName" name="name" class="form-control" required
+                           minlength="2" maxlength="100">
+                </div>
+
+                <div class="form-group">
+                    <label for="categoryDesc">Description</label>
+                    <textarea id="categoryDesc" name="description" class="form-control"
+                              maxlength="500" placeholder="Optional description"></textarea>
+                </div>
+
+                <!-- Parent Category Selection -->
+                <div class="form-group">
+                    <label for="parentCategory">Parent Category <span
+                            class="text-sm text-gray-500">(Optional)</span></label>
+                    <select id="parentCategory" name="parent_id" class="form-control">
+                        <option value="">No Parent (Top Level)</option>
+                        {% for category in categories %}
+                            <option value="{{ category.id }}" {% if category.id == parent_id %}selected{% endif %}>
+                                {{ category.get_full_name() }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <span class="tooltip-text">
+                    Select a parent category to create a subcategory. Leave empty to create a top-level category.
+                </span>
+                </div>
+
+                <!-- Styling Options -->
+                <div class="form-group">
+                    <label for="categoryIcon">Icon</label>
+                    <div class="icon-preview-wrapper">
+                        <div class="icon-preview"></div>
+                        <select id="categoryIcon" name="icon" class="form-control">
+                            {% for icon_value, icon_name in Category.ICON_CHOICES.items() %}
+                                <option value="{{ icon_value }}">
+                                    <i class="fas fa-{{ icon_value }}"></i> {{ icon_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="categoryColor">Color</label>
+                    <div class="color-preview-wrapper">
+                        <div class="color-preview"></div>
+                        <select id="categoryColor" name="color" class="form-control">
+                            {% for color_value, color_info in Category.COLOR_CHOICES.items() %}
+                                <option value="{{ color_value }}"
+                                        style="background-color: {{ color_info.code }}">
+                                    {{ color_info.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Additional Options -->
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="isActive" name="is_active" checked>
+                        Active Category
+                    </label>
+                    <small class="form-text text-muted">
+                        Inactive categories won't appear in transaction forms
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="isBudgetTracked" name="is_budget_tracked" checked>
+                        Track in Budget
+                    </label>
+                    <small class="form-text text-muted">
+                        Include this category in budget tracking and reports
+                    </small>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="hideCategoryModal()">Cancel</button>
+                    <button type="submit" class="btn-save-category">Save Category</button>
+                </div>
+            </form>
+        </div>
+    </div>
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>
-<script src="{{ url_for('static', filename='js/transactions.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>
+    <script src="{{ url_for('static', filename='js/transactions.js') }}"></script>
 {% endblock %}

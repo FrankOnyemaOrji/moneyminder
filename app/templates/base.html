@@ -9,7 +9,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/accounts.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/account-management.css') }}">
 
     <!-- Page Specific Styles -->
     {% block styles %}{% endblock %}
@@ -24,7 +23,6 @@
                 <a href="{{ url_for('main.index') }}">Dashboard</a>
                 <a href="{{ url_for('accounts.index') }}">Accounts</a>
                 <a href="{{ url_for('transactions.index') }}">Transactions</a>
-                <a href="{{ url_for('categories.index') }}">Categories</a>
                 <a href="{{ url_for('budgets.index') }}">Budgets</a>
                 <a href="{{ url_for('auth.logout') }}">Logout</a>
             {% else %}

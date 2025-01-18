@@ -1,70 +1,64 @@
 document.addEventListener('DOMContentLoaded', function() {
     const deleteForm = document.querySelector('.delete-form');
-    const submitButton = deleteForm?.querySelector('button[type="submit"]');
-    const cancelButton = deleteForm?.querySelector('.btn-secondary');
+    const confirmDeleteBtn = document.querySelector('.btn-danger[type="submit"]');
+    const goBackBtn = document.querySelector('.btn-secondary');
 
     if (deleteForm) {
         initializeDeleteForm();
-        initializeCancelButton();
     }
 
     function initializeDeleteForm() {
+        // Handle form submission
         deleteForm.addEventListener('submit', handleDelete);
+
+        // Handle go back button
+        if (goBackBtn) {
+            goBackBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                window.history.back();
+            });
+        }
     }
 
-    function handleDelete(e) {
+    async function handleDelete(e) {
         e.preventDefault();
 
         // Check if delete is disabled due to non-zero balance
-        if (submitButton.disabled) {
+        if (confirmDeleteBtn.disabled) {
             showNotification('Cannot delete account with non-zero balance. Please clear the balance first.', 'error');
             return;
         }
 
-        // Show loading state
-        submitButton.disabled = true;
-        const originalText = submitButton.innerHTML;
-        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+        try {
+            // Show loading state
+            confirmDeleteBtn.disabled = true;
+            const originalText = confirmDeleteBtn.innerHTML;
+            confirmDeleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
 
-        // Submit the delete request
-        fetch(deleteForm.action, {
-            method: 'POST',
-            body: new FormData(deleteForm),
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
+            const response = await fetch(deleteForm.action, {
+                method: 'POST',
+                body: new FormData(deleteForm),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const data = await response.json();
+
             if (data.success) {
                 showNotification('Account deleted successfully', 'success');
                 // Redirect after a short delay to show the success message
-                setTimeout(() => {
-                    window.location.href = '/accounts';
-                }, 1000);
+                setTimeout(() => window.location.href = '/accounts', 1000);
             } else {
                 throw new Error(data.message || 'Failed to delete account');
             }
-        })
-        .catch(error => {
+        } catch (error) {
             console.error('Error:', error);
             showNotification(error.message || 'An error occurred while deleting the account', 'error');
-            submitButton.disabled = false;
-            submitButton.innerHTML = originalText;
-        });
-    }
 
-    function initializeCancelButton() {
-        if (cancelButton) {
-            cancelButton.addEventListener('click', function(e) {
-                e.preventDefault();
-                window.history.back();
-            });
+            // Reset button state
+            confirmDeleteBtn.disabled = false;
+            confirmDeleteBtn.innerHTML = originalText;
         }
     }
 
@@ -74,25 +68,18 @@ document.addEventListener('DOMContentLoaded', function() {
         notification.innerHTML = `
             <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
             <span>${message}</span>
-            <button class="notification-close">×</button>
         `;
 
-        document.body.appendChild(notification);
+        const container = document.getElementById('notifications') || document.body;
+        container.appendChild(notification);
 
-        // Add close button functionality
-        const closeButton = notification.querySelector('.notification-close');
-        closeButton.addEventListener('click', () => {
-            notification.classList.remove('show');
-            setTimeout(() => notification.remove(), 300);
-        });
-
-        // Show notification with animation
+        // Show with animation
         setTimeout(() => notification.classList.add('show'), 10);
 
-        // Auto-dismiss after 5 seconds
+        // Remove after delay
         setTimeout(() => {
             notification.classList.remove('show');
             setTimeout(() => notification.remove(), 300);
-        }, 5000);
+        }, 3000);
     }
 });

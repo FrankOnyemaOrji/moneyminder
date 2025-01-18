@@ -1,128 +1,138 @@
-<!-- view.html -->
 {% extends "base.html" %}
 
+{% block title %}{{ account.name }} - Account Overview{% endblock %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/account-view.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="account-container">
-    <div class="page-header">
-        <div class="header-content">
-            <div class="header-title">
-                <h1>{{ account.name }}</h1>
-                <span class="header-subtitle">Account Overview</span>
-            </div>
-            <div class="header-actions">
-                <a href="{{ url_for('accounts.index') }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Back to Accounts
-                </a>
-                <a href="{{ url_for('accounts.edit', account_id=account.id) }}" class="btn btn-primary">
-                    <i class="fas fa-edit"></i> Edit Account
-                </a>
+    <div class="account-container">
+        <div class="page-header">
+            <div class="header-content">
+                <div class="header-title">
+                    <h1>{{ account.name }}</h1>
+                    <span class="header-subtitle">Account Overview</span>
+                </div>
+                <div class="header-actions">
+                    <a href="{{ url_for('accounts.index') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Accounts
+                    </a>
+                    <a href="{{ url_for('accounts.edit', account_id=account.id) }}" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Edit Account
+                    </a>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="account-summary-card">
-        <div class="account-header">
-            <div class="account-type-icon {{ account.account_type }}">
-                <i class="fas fa-{{ account.account_type|account_icon }}"></i>
-            </div>
-            <div class="account-info">
-                <h2>{{ account.name }}</h2>
-                <span class="account-type-label">{{ account.account_type|title }} Account</span>
-            </div>
-            <div class="balance-info">
-                <span class="label">Current Balance</span>
-                <span class="amount {% if account.balance < 0 %}negative{% endif %}">
+        <div class="account-summary-card">
+            <div class="account-header">
+                <div class="account-type-icon {{ account.account_type }}">
+                    <i class="fas fa-{{ account.account_type|account_icon }}"></i>
+                </div>
+                <div class="account-info">
+                    <h2>{{ account.name }}</h2>
+                    <span class="account-type-label">{{ account.account_type|title }} Account</span>
+                </div>
+                <div class="balance-info">
+                    <span class="label">Current Balance</span>
+                    <span class="amount {% if account.balance < 0 %}negative{% endif %}">
                     {{ account.currency }} {{ "${:,.2f}".format(account.balance) }}
                 </span>
+                </div>
             </div>
-        </div>
 
-        <div class="details-grid">
-            <div class="detail-item">
-                <span class="label">Total Income</span>
-                <span class="value positive">
+            <div class="details-grid">
+                <div class="detail-item">
+                    <span class="label">Total Income</span>
+                    <span class="value positive">
                     {{ account.currency }} {{ "${:,.2f}".format(total_income) }}
                 </span>
-            </div>
-            <div class="detail-item">
-                <span class="label">Total Expenses</span>
-                <span class="value negative">
+                </div>
+                <div class="detail-item">
+                    <span class="label">Total Expenses</span>
+                    <span class="value negative">
                     {{ account.currency }} {{ "${:,.2f}".format(total_expenses) }}
                 </span>
+                </div>
+                <div class="detail-item">
+                    <span class="label">Created On</span>
+                    <span class="value">{{ moment(account.created_at).format('LL') }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="label">Last Updated</span>
+                    <span class="value">{{ moment(account.updated_at).fromNow() }}</span>
+                </div>
             </div>
-            <div class="detail-item">
-                <span class="label">Created On</span>
-                <span class="value">{{ moment(account.created_at).format('LL') }}</span>
+        </div>
+
+        <div class="transactions-section">
+            <div class="section-header">
+                <h2>Transaction History</h2>
+                <div class="filters">
+                    <label for="timeRange"></label><select id="timeRange" class="form-control">
+                        <option value="7" {% if days == 7 %}selected{% endif %}>Last 7 days</option>
+                        <option value="30" {% if days == 30 %}selected{% endif %}>Last 30 days</option>
+                        <option value="90" {% if days == 90 %}selected{% endif %}>Last 90 days</option>
+                        <option value="365" {% if days == 365 %}selected{% endif %}>Last year</option>
+                    </select>
+                    <button class="btn btn-primary"
+                            onclick="window.location.href='{{ url_for('transactions.create', account_id=account.id) }}'">
+                        <i class="fas fa-plus"></i> New Transaction
+                    </button>
+                </div>
             </div>
-            <div class="detail-item">
-                <span class="label">Last Updated</span>
-                <span class="value">{{ moment(account.updated_at).fromNow() }}</span>
+
+            <div class="transactions-table-container">
+                {% if transactions %}
+                    <table class="transactions-table">
+                        <thead>
+                        <tr>
+                            <th class="sortable" data-sort="date">Date</th>
+                            <th class="sortable" data-sort="description">Description</th>
+                            <th class="sortable" data-sort="category">Category</th>
+                            <th class="sortable" data-sort="amount">Amount</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for transaction in transactions %}
+                            <tr class="{{ transaction.transaction_type }}" data-date="{{ transaction.date }}">
+                                <td>{{ moment(transaction.date).format('L') }}</td>
+                                <td>{{ transaction.description }}</td>
+                                <td>{{ transaction.category.name if transaction.category else 'Uncategorized' }}</td>
+                                <td class="amount {% if transaction.transaction_type == 'expense' %}negative{% endif %}">
+                                    {{ account.currency }} {{ "${:,.2f}".format(transaction.amount) }}
+                                </td>
+                                <td class="actions">
+                                    <a href="{{ url_for('transactions.edit', transaction_id=transaction.id) }}"
+                                       class="btn-icon" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button class="btn-icon delete-transaction"
+                                            data-id="{{ transaction.id }}"
+                                            title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-receipt"></i>
+                        <h3>No Transactions Found</h3>
+                        <p>There are no transactions for the selected period.</p>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
 
-    <!-- Transaction History Section -->
-    <div class="transactions-section">
-        <div class="section-header">
-            <h2>Transaction History</h2>
-            <div class="filters">
-                <select id="timeRange" class="form-control">
-                    <option value="7">Last 7 days</option>
-                    <option value="30" selected>Last 30 days</option>
-                    <option value="90">Last 90 days</option>
-                    <option value="365">Last year</option>
-                </select>
-            </div>
-        </div>
+    <div class="notifications-container"></div>
+{% endblock %}
 
-        <div class="transactions-table-container">
-            {% if transactions %}
-            <table class="transactions-table">
-                <thead>
-                    <tr>
-                        <th class="sortable" data-sort="date">Date</th>
-                        <th class="sortable" data-sort="description">Description</th>
-                        <th class="sortable" data-sort="category">Category</th>
-                        <th class="sortable" data-sort="amount">Amount</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for transaction in transactions %}
-                    <tr class="{{ transaction.transaction_type }}" data-date="{{ transaction.date }}">
-                        <td>{{ moment(transaction.date).format('L') }}</td>
-                        <td>{{ transaction.description }}</td>
-                        <td>{{ transaction.category.name if transaction.category else 'Uncategorized' }}</td>
-                        <td class="amount {% if transaction.transaction_type == 'expense' %}negative{% endif %}">
-                            {{ account.currency }} {{ "${:,.2f}".format(transaction.amount) }}
-                        </td>
-                        <td class="actions">
-                            <a href="{{ url_for('transactions.edit', transaction_id=transaction.id) }}"
-                               class="btn-icon" title="Edit">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <button class="btn-icon delete-transaction"
-                                    data-id="{{ transaction.id }}"
-                                    title="Delete">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <div class="empty-state">
-                <i class="fas fa-receipt"></i>
-                <h3>No Transactions Found</h3>
-                <p>There are no transactions for the selected period.</p>
-                <a href="{{ url_for('transactions.create', account_id=account.id) }}"
-                   class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Add Transaction
-                </a>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-</div>
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/account-view.js') }}"></script>
 {% endblock %}
