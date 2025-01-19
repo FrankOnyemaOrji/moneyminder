@@ -49,6 +49,7 @@
                     <span class="amount">{{ "${:,.2f}".format(total_income - total_expenses) }}</span>
                 </div>
             </div>
+            <a href="{{ url_for('reports.generate_report') }}" class="card-link-generate">Generate Report</a>
         </div>
 
         <!-- Recent Transactions -->

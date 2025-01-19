@@ -4,16 +4,12 @@ from flask_migrate import Migrate
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
+from datetime import datetime
 
-from app.utils.filters import init_filters
-from .config import Config
-
+# Initialize Flask extensions
 db = SQLAlchemy()
 migrate = Migrate()
 login_manager = LoginManager()
-# moment = Moment()
-
-from datetime import datetime
 
 
 def register_filters(app):
@@ -27,28 +23,21 @@ def register_filters(app):
         return value.strftime('%Y-%m-%d')
 
 
-def create_app():
+def create_app(config_class=None):
     app = Flask(__name__)
-    init_filters(app)
-    app.config.from_object(Config)
-    moment = Moment(app)
 
-    @app.context_processor
-    def utility_processor():
-        return {
-            'Category': Category
-        }
+    # Load config
+    if config_class is None:
+        from .config import Config
+        config_class = Config
+    app.config.from_object(config_class)
 
-    register_filters(app)
-
-    csrf = CSRFProtect()
-    csrf.init_app(app)
-
-    # Initialize Flask extensions
+    # Initialize extensions with app
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
-    moment.init_app(app)
+    moment = Moment(app)
+    csrf = CSRFProtect(app)
 
     # Setup Flask-Login
     login_manager.login_view = 'auth.login'
@@ -56,8 +45,18 @@ def create_app():
     login_manager.login_message_category = 'info'
 
     with app.app_context():
-        # Import models and create tables
+        # Import filters and models after db is initialized
+        from app.utils.filters import init_filters
+        init_filters(app)
+        register_filters(app)
+
         from .models import User, Account, Category, Transaction, Budget
+        from .models.category import Category
+
+        @app.context_processor
+        def utility_processor():
+            return {'Category': Category}
+
         db.create_all()
 
         # Register blueprints
@@ -66,12 +65,14 @@ def create_app():
         from .routes.accounts import accounts
         from .routes.transactions import transactions
         from .routes.budgets import budgets
+        from .routes.reports import bp as reports_bp
 
         app.register_blueprint(auth, url_prefix='/auth')
         app.register_blueprint(main)
         app.register_blueprint(accounts, url_prefix='/accounts')
         app.register_blueprint(transactions, url_prefix='/transactions')
         app.register_blueprint(budgets, url_prefix='/budgets')
+        app.register_blueprint(reports_bp)
 
         @login_manager.user_loader
         def load_user(user_id):

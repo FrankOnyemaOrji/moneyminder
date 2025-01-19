@@ -207,3 +207,19 @@
 .card-link:hover {
     background-color: #dbeafe;
 }
+
+.card-link-generate{
+    display: block;
+    text-align: center;
+    color: #2563eb;
+    text-decoration: none;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    background-color: #f1f5f9;
+    transition: all 0.2s ease;
+    margin-top: 4rem;
+}
+
+.card-link-generate:hover {
+    background-color: #dbeafe;
+}

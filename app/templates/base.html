@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{% endblock %} - WalletApp</title>
+    <title>{% block title %}{% endblock %} - MoneyMinder</title>
 
     <!-- Base Styles -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
@@ -19,7 +19,7 @@
 <body>
 <nav class="navbar">
     <div class="navbar-brand">
-        <a href="{{ url_for('main.index') }}">WalletApp</a>
+        <a href="{{ url_for('main.index') }}">MoneyMinder</a>
     </div>
     <div class="navbar-menu">
         {% if current_user.is_authenticated %}
@@ -27,6 +27,7 @@
             <a href="{{ url_for('accounts.index') }}">Accounts</a>
             <a href="{{ url_for('transactions.index') }}">Transactions</a>
             <a href="{{ url_for('budgets.index') }}">Budgets</a>
+            <a href="{{ url_for('reports.generate_report') }}">Reports</a>
             <a href="{{ url_for('auth.logout') }}">Logout</a>
         {% else %}
             <a href="{{ url_for('auth.login') }}">Login</a>

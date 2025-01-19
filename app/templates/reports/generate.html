@@ -1,0 +1,81 @@
+{# templates/reports/generate.html #}
+{% extends "base.html" %}
+
+{% block title %}Generate Report{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/generate.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="report-container">
+    <div class="report-header">
+        <div class="header-content">
+            <h1>Generate Spending Report</h1>
+            <p>Generate detailed financial reports for your accounts</p>
+        </div>
+    </div>
+
+    <div class="report-form-container">
+        <form id="reportForm" method="post" action="{{ url_for('reports.generate_report') }}">
+            {{ form.hidden_tag() }}
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <div class="input-group">
+                        <i class="fas fa-calendar input-icon"></i>
+                        {{ form.start_date.label }}
+                        {{ form.start_date(class="form-control", type="date") }}
+                    </div>
+                    {% for error in form.start_date.errors %}
+                        <span class="error"><i class="fas fa-exclamation-circle"></i> {{ error }}</span>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group">
+                    <div class="input-group">
+                        <i class="fas fa-calendar input-icon"></i>
+                        {{ form.end_date.label }}
+                        {{ form.end_date(class="form-control", type="date") }}
+                    </div>
+                    {% for error in form.end_date.errors %}
+                        <span class="error"><i class="fas fa-exclamation-circle"></i> {{ error }}</span>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group">
+                    <div class="input-group">
+                        <i class="fas fa-wallet input-icon"></i>
+                        {{ form.account_id.label }}
+                        {{ form.account_id(class="form-control") }}
+                    </div>
+                    {% for error in form.account_id.errors %}
+                        <span class="error"><i class="fas fa-exclamation-circle"></i> {{ error }}</span>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group">
+                    <div class="input-group">
+                        <i class="fas fa-file-export input-icon"></i>
+                        {{ form.format.label }}
+                        {{ form.format(class="form-control") }}
+                    </div>
+                    {% for error in form.format.errors %}
+                        <span class="error"><i class="fas fa-exclamation-circle"></i> {{ error }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-file-export"></i> Generate Report
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/generate.js') }}"></script>
+{% endblock %}

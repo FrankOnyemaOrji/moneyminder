@@ -1,5 +1,7 @@
-from app import db
+from flask_sqlalchemy import SQLAlchemy
 import uuid
+
+db = SQLAlchemy()
 
 
 def generate_id():
@@ -36,13 +38,11 @@ class BaseModel:
     def get_all(cls):
         return cls.query.all()
 
-
-# Import all models here to avoid circular imports
+# Import models
 from .user import User
 from .account import Account
 from .category import Category
 from .transaction import Transaction
 from .budget import Budget
-from .report_template import ReportTemplate
 
-__all__ = ['User', 'Account', 'Category', 'Transaction', 'Budget', 'ReportTemplate', 'BaseModel']
+__all__ = ['User', 'Account', 'Category', 'Transaction', 'Budget', 'BaseModel', 'db']
