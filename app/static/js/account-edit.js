@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const form = document.querySelector('.account-edit-form');
     const descriptionField = document.querySelector('textarea[name="description"]');
     const currencySelect = document.getElementById('currency');
@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Handle currency change warning
         if (currencySelect) {
             const originalCurrency = currencySelect.getAttribute('data-current-currency');
-            currencySelect.addEventListener('change', function() {
+            currencySelect.addEventListener('change', function () {
                 if (this.value !== originalCurrency) {
                     if (!confirm('Changing the currency may affect your transaction history. Are you sure you want to continue?')) {
                         this.value = originalCurrency;
@@ -66,16 +66,29 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch(form.action, {
                 method: 'POST',
                 body: formData,
-
+                headers: {
+                    'Accept': 'application/json'
+                }
             });
 
-            const data = await response.json();
-
-            if (data.success) {
+            if (response.redirected) {
                 showNotification('Account updated successfully', 'success');
-                setTimeout(() => window.location.href = '/accounts', 1000);
+                setTimeout(() => window.location.href = response.url, 1000);
+                return;
+            }
+
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.message || 'Failed to update account');
+                }
+                if (data.success) {
+                    showNotification('Account updated successfully', 'success');
+                    setTimeout(() => window.location.href = '/accounts', 1000);
+                }
             } else {
-                throw new Error(data.message || 'Failed to update account');
+                throw new Error('Unexpected response format');
             }
         } catch (error) {
             console.error('Error:', error);

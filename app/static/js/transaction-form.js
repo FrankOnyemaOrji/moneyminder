@@ -157,21 +157,35 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const response = await fetch(this.action, {
                 method: 'POST',
-                body: formData
+                body: formData,
+                headers: {
+                    'Accept': 'application/json'
+                }
             });
 
-            if (!response.ok) {
-                throw new Error('Failed to create transaction');
+            if (response.redirected) {
+                showSuccess('Transaction created successfully!');
+                setTimeout(() => window.location.href = response.url, 1500);
+                return;
             }
 
-            showSuccess('Transaction created successfully!');
-            setTimeout(() => {
-                window.location.href = '/transactions';
-            }, 1500);
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.message || 'Failed to create transaction');
+                }
+                if (data.success) {
+                    showSuccess('Transaction created successfully!');
+                    setTimeout(() => window.location.href = '/transactions', 1500);
+                }
+            } else {
+                throw new Error('Unexpected response format');
+            }
 
         } catch (error) {
             console.error('Error:', error);
-            showError('Failed to create transaction. Please try again.');
+            showError(error.message || 'Failed to create transaction. Please try again.');
         } finally {
             hideSubmitLoading();
         }

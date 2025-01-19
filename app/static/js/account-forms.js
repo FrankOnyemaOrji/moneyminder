@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('createAccountForm');
     const accountTypeSelect = document.getElementById('account_type');
     const currencySelect = document.getElementById('currency');
@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
         initializeFormValidation();
 
         // Handle form submission
-        form.addEventListener('submit', function(event) {
+        form.addEventListener('submit', function (event) {
             event.preventDefault(); // Prevent default submission
 
             // Validate all required fields
@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const requiredFields = form.querySelectorAll('[required]');
 
             requiredFields.forEach(field => {
-                if (!validateField({ target: field })) {
+                if (!validateField({target: field})) {
                     isValid = false;
                 }
             });
@@ -45,30 +45,43 @@ document.addEventListener('DOMContentLoaded', function() {
                 fetch(form.action || window.location.href, {
                     method: 'POST',
                     body: new FormData(form),
-
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        return response.json().then(data => Promise.reject(data));
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.success) {
-                        window.location.href = data.redirect;
-                    } else {
-                        throw new Error(data.message || 'An error occurred');
+                    headers: {
+                        'Accept': 'application/json'
                     }
                 })
-                .catch(error => {
-                    console.error('Error:', error);
-                    submitButton.disabled = false;
-                    submitButton.innerHTML = 'Save Account';
+                    .then(response => {
+                        if (response.redirected) {
+                            window.location.href = response.url;
+                            return;
+                        }
 
-                    // Show error message
-                    const errorMessage = error.message || 'An error occurred while creating the account';
-                    showFlashMessage(errorMessage, 'error');
-                });
+                        const contentType = response.headers.get('content-type');
+                        if (contentType && contentType.includes('application/json')) {
+                            return response.json().then(data => {
+                                if (!response.ok) {
+                                    return Promise.reject(data);
+                                }
+                                return data;
+                            });
+                        } else {
+                            // If response is not JSON and not a redirect, something went wrong
+                            throw new Error('Unexpected response format');
+                        }
+                    })
+                    .then(data => {
+                        if (data && data.success) {
+                            window.location.href = data.redirect;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = 'Save Account';
+
+                        // Show error message
+                        const errorMessage = error.message || 'An error occurred while creating the account';
+                        showFlashMessage(errorMessage, 'error');
+                    });
             } else {
                 // Focus first invalid field
                 const firstInvalid = form.querySelector('.is-invalid');
@@ -81,7 +94,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Update currency symbol when currency changes
     if (currencySelect && currencySymbol) {
-        currencySelect.addEventListener('change', function() {
+        currencySelect.addEventListener('change', function () {
             const currency = this.value;
             currencySymbol.textContent = CURRENCY_SYMBOLS[currency] || currency;
         });
@@ -89,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Add description character counter
     if (descriptionInput && descriptionCounter) {
-        descriptionInput.addEventListener('input', function() {
+        descriptionInput.addEventListener('input', function () {
             const length = this.value.length;
             descriptionCounter.textContent = `${length}/500`;
             descriptionCounter.style.color = length > 450 ? '#dc2626' : '#6b7280';
@@ -211,12 +224,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add hover effect for help items
     const helpItems = document.querySelectorAll('.help-item');
     helpItems.forEach(item => {
-        item.addEventListener('mouseenter', function() {
+        item.addEventListener('mouseenter', function () {
             this.style.transform = 'translateY(-2px)';
             this.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
         });
 
-        item.addEventListener('mouseleave', function() {
+        item.addEventListener('mouseleave', function () {
             this.style.transform = 'translateY(0)';
             this.style.boxShadow = 'none';
         });

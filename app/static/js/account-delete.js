@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const deleteForm = document.querySelector('.delete-form');
     const confirmDeleteBtn = document.querySelector('.btn-danger[type="submit"]');
     const goBackBtn = document.querySelector('.btn-secondary');
@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Handle go back button
         if (goBackBtn) {
-            goBackBtn.addEventListener('click', function(e) {
+            goBackBtn.addEventListener('click', function (e) {
                 e.preventDefault();
                 window.history.back();
             });
@@ -38,16 +38,29 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch(deleteForm.action, {
                 method: 'POST',
                 body: new FormData(deleteForm),
+                headers: {
+                    'Accept': 'application/json'
+                }
             });
 
-            const data = await response.json();
-
-            if (data.success) {
+            if (response.redirected) {
                 showNotification('Account deleted successfully', 'success');
-                // Redirect after a short delay to show the success message
-                setTimeout(() => window.location.href = '/accounts', 1000);
+                setTimeout(() => window.location.href = response.url, 1000);
+                return;
+            }
+
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.message || 'Failed to delete account');
+                }
+                if (data.success) {
+                    showNotification('Account deleted successfully', 'success');
+                    setTimeout(() => window.location.href = '/accounts', 1000);
+                }
             } else {
-                throw new Error(data.message || 'Failed to delete account');
+                throw new Error('Unexpected response format');
             }
         } catch (error) {
             console.error('Error:', error);
