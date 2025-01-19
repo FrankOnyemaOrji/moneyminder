@@ -1,51 +1,35 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, SelectField, DateField, BooleanField, SelectMultipleField
-from wtforms.validators import DataRequired, Length, Optional
+from wtforms import DateField, SelectField
+from wtforms.validators import DataRequired
 
 
 class ReportFilterForm(FlaskForm):
     """Form for report filters"""
-    start_date = DateField('Start Date', validators=[Optional()])
-    end_date = DateField('End Date', validators=[Optional()])
+    start_date = DateField('Start Date',
+                           validators=[DataRequired()],
+                           description='Select start date')
 
-    accounts = SelectMultipleField('Accounts', coerce=str)
-    categories = SelectMultipleField('Categories')
+    end_date = DateField('End Date',
+                         validators=[DataRequired()],
+                         description='Select end date')
 
-    transaction_type = SelectField('Transaction Type',
-                                   choices=[
-                                       ('all', 'All'),
-                                       ('income', 'Income'),
-                                       ('expense', 'Expense')
-                                   ])
-
-    group_by = SelectField('Group By',
-                           choices=[
-                               ('date', 'Date'),
-                               ('category', 'Category'),
-                               ('account', 'Account')
-                           ])
+    account_id = SelectField('Account',
+                             validators=[DataRequired()],
+                             description='Select account',
+                             coerce=str)
 
     format = SelectField('Format',
                          choices=[
-                             ('csv', 'CSV'),
-                             ('excel', 'Excel')
-                         ])
-
-    include_summary = BooleanField('Include Summary', default=True)
-    include_charts = BooleanField('Include Charts', default=True)
+                             ('xlsx', 'Microsoft Excel (.xlsx)'),
+                             ('pdf', 'Adobe PDF (.pdf)')
+                         ],
+                         default='xlsx',
+                         description='Select export format')
 
     def __init__(self, user, *args, **kwargs):
         super(ReportFilterForm, self).__init__(*args, **kwargs)
-        # Populate account choices
-        self.accounts.choices = [(str(a.id), a.name) for a in user.accounts]
-
-
-class ReportTemplateForm(FlaskForm):
-    """Form for saving report templates"""
-    name = StringField('Template Name',
-                       validators=[DataRequired(), Length(max=100)])
-
-    description = TextAreaField('Description',
-                                validators=[Optional(), Length(max=500)])
-
-    is_default = BooleanField('Set as Default Template')
+        # Populate account choices with currency info
+        self.account_id.choices = [('', 'Select Account')] + [
+            (str(a.id), f"{a.name} ({a.currency})")
+            for a in user.accounts
+        ]
