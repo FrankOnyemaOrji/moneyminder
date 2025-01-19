@@ -14,6 +14,34 @@ from app.forms.transaction import TransactionForm, TransactionFilterForm, BulkTr
 transactions = Blueprint('transactions', __name__)
 
 
+def get_complete_category_summary(user_id, start_date=None, end_date=None):
+    """Get summary for all categories, including those with zero transactions"""
+    # Get all preset categories
+    all_categories = Category.PRESET_CATEGORIES.keys()
+
+    # Initialize summary with zero values for all categories
+    summary = {category: {
+        'income': 0.0,
+        'expense': 0.0,
+        'transaction_count': 0
+    } for category in all_categories}
+
+    # Build query
+    query = Transaction.query.filter_by(user_id=user_id)
+    if start_date:
+        query = query.filter(Transaction.date >= start_date)
+    if end_date:
+        query = query.filter(Transaction.date <= end_date)
+
+    # Update summary with actual transaction data
+    for transaction in query.all():
+        if transaction.category in summary:
+            summary[transaction.category][transaction.transaction_type] += float(transaction.amount)
+            summary[transaction.category]['transaction_count'] += 1
+
+    return summary
+
+
 @transactions.route('/')
 @login_required
 def index():
@@ -25,47 +53,60 @@ def index():
                                   (datetime.utcnow() - timedelta(days=30)).strftime('%Y-%m-%d'))
     end_date = request.args.get('end_date',
                                 datetime.utcnow().strftime('%Y-%m-%d'))
-    type_filter = request.args.get('type_filter', 'all')
-    account_filter = request.args.get('account_filter', '')
-    category_filter = request.args.get('category_filter', '')
-    tag_filter = request.args.get('tag_filter', '')
-    min_amount = request.args.get('min_amount', type=float)
-    max_amount = request.args.get('max_amount', type=float)
-    search = request.args.get('search', '')
+
+    # Convert dates to datetime objects
+    start_date = datetime.strptime(start_date, '%Y-%m-%d') if start_date else None
+    end_date = datetime.strptime(end_date, '%Y-%m-%d') if end_date else None
 
     # Build transaction query
     query = Transaction.query.filter_by(user_id=current_user.id)
 
     if start_date:
-        query = query.filter(Transaction.date >= datetime.strptime(start_date, '%Y-%m-%d'))
+        query = query.filter(Transaction.date >= start_date)
     if end_date:
-        query = query.filter(Transaction.date <= datetime.strptime(end_date, '%Y-%m-%d'))
+        query = query.filter(Transaction.date <= end_date)
+
+    # Apply additional filters
+    type_filter = request.args.get('type_filter', 'all')
     if type_filter != 'all':
         query = query.filter(Transaction.transaction_type == type_filter)
+
+    account_filter = request.args.get('account_filter')
     if account_filter:
         query = query.filter(Transaction.account_id == account_filter)
+
+    category_filter = request.args.get('category_filter')
     if category_filter:
         query = query.filter(Transaction.category == category_filter)
+
+    tag_filter = request.args.get('tag_filter')
     if tag_filter:
         query = query.filter(Transaction.tag == tag_filter)
+
+    min_amount = request.args.get('min_amount', type=float)
     if min_amount:
         query = query.filter(Transaction.amount >= min_amount)
+
+    max_amount = request.args.get('max_amount', type=float)
     if max_amount:
         query = query.filter(Transaction.amount <= max_amount)
+
+    search = request.args.get('search', '')
     if search:
         query = query.filter(Transaction.description.ilike(f'%{search}%'))
 
+    # Execute query
     transactions = query.order_by(Transaction.date.desc()).all()
 
     # Calculate totals
     total_income = sum(t.amount for t in transactions if t.transaction_type == 'income')
     total_expenses = sum(t.amount for t in transactions if t.transaction_type == 'expense')
 
-    # Get category summary
-    category_summary = Transaction.get_category_summary(
+    # Get complete category summary including zero-value categories
+    category_summary = get_complete_category_summary(
         current_user.id,
-        start_date=datetime.strptime(start_date, '%Y-%m-%d') if start_date else None,
-        end_date=datetime.strptime(end_date, '%Y-%m-%d') if end_date else None
+        start_date=start_date,
+        end_date=end_date
     )
 
     return render_template('transactions/list.html',
@@ -126,7 +167,6 @@ def create():
             db.session.rollback()
             flash('Error creating transaction', 'error')
 
-    # If there are form errors, they will be displayed in the template
     return render_template('transactions/create.html',
                            form=form,
                            categories=Category.PRESET_CATEGORIES,
@@ -199,68 +239,60 @@ def get_category_tags(category):
 @login_required
 def transaction_stats():
     """API endpoint for transaction statistics"""
-    start_date = request.args.get('start_date',
-                                  (datetime.utcnow() - timedelta(days=30)).strftime('%Y-%m-%d'))
-    end_date = request.args.get('end_date',
-                                datetime.utcnow().strftime('%Y-%m-%d'))
+    try:
+        # Parse date parameters
+        days = int(request.args.get('days', 30))
+        end_date = datetime.utcnow()
+        start_date = end_date - timedelta(days=days)
 
-    start_date = datetime.strptime(start_date, '%Y-%m-%d')
-    end_date = datetime.strptime(end_date, '%Y-%m-%d')
-
-    # Get category summary
-    category_summary = Transaction.get_category_summary(current_user.id, start_date, end_date)
-
-    # Get daily stats
-    daily_stats = {}
-    current_date = start_date
-    while current_date <= end_date:
-        date_str = current_date.strftime('%Y-%m-%d')
-        daily_stats[date_str] = {
-            'income': 0,
-            'expense': 0,
-            'net': 0
-        }
-        current_date += timedelta(days=1)
-
-    transactions = Transaction.get_by_date_range(current_user.id, start_date, end_date)
-    for transaction in transactions:
-        date_str = transaction.date.strftime('%Y-%m-%d')
-        if transaction.transaction_type == 'income':
-            daily_stats[date_str]['income'] += float(transaction.amount)
-        else:
-            daily_stats[date_str]['expense'] += float(transaction.amount)
-        daily_stats[date_str]['net'] = (
-                daily_stats[date_str]['income'] - daily_stats[date_str]['expense']
-        )
-
-    # Account breakdown
-    account_stats = {}
-    for transaction in transactions:
-        account_name = transaction.account.name
-        if account_name not in account_stats:
-            account_stats[account_name] = {
-                'income': 0,
-                'expense': 0,
-                'transaction_count': 0
+        # Get daily stats
+        daily_stats = {}
+        current_date = start_date
+        while current_date <= end_date:
+            date_str = current_date.strftime('%Y-%m-%d')
+            daily_stats[date_str] = {
+                'income': 0.0,
+                'expense': 0.0,
+                'net': 0.0
             }
-        account_stats[account_name][transaction.transaction_type] += float(transaction.amount)
-        account_stats[account_name]['transaction_count'] += 1
+            current_date += timedelta(days=1)
 
-    # Calculate totals
-    total_income = sum(t.amount for t in transactions if t.transaction_type == 'income')
-    total_expenses = sum(t.amount for t in transactions if t.transaction_type == 'expense')
+        # Query transactions for the period
+        transactions = Transaction.query.filter(
+            Transaction.user_id == current_user.id,
+            Transaction.date.between(start_date, end_date)
+        ).all()
 
-    return jsonify({
-        'category_summary': category_summary,
-        'daily_stats': daily_stats,
-        'account_stats': account_stats,
-        'summary': {
-            'total_income': float(total_income),
-            'total_expenses': float(total_expenses),
-            'net_amount': float(total_income - total_expenses),
-            'transaction_count': len(transactions)
-        }
-    })
+        # Update daily stats
+        for transaction in transactions:
+            date_str = transaction.date.strftime('%Y-%m-%d')
+            amount = float(transaction.amount)
+
+            if transaction.transaction_type == 'income':
+                daily_stats[date_str]['income'] += amount
+            else:
+                daily_stats[date_str]['expense'] += amount
+
+            daily_stats[date_str]['net'] = (
+                    daily_stats[date_str]['income'] - daily_stats[date_str]['expense']
+            )
+
+        # Calculate totals
+        total_income = sum(stat['income'] for stat in daily_stats.values())
+        total_expenses = sum(stat['expense'] for stat in daily_stats.values())
+
+        return jsonify({
+            'daily_stats': daily_stats,
+            'summary': {
+                'total_income': float(total_income),
+                'total_expenses': float(total_expenses),
+                'net_amount': float(total_income - total_expenses),
+                'transaction_count': len(transactions)
+            }
+        })
+    except Exception as e:
+        print('Error in transaction_stats:', str(e))  # Add debug print
+        return jsonify({'error': str(e)}), 500
 
 
 @transactions.route('/import', methods=['GET', 'POST'])

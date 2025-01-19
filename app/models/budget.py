@@ -87,8 +87,8 @@ class Budget(db.Model, BaseModel):
         return {
             'id': self.id,
             'amount': float(self.amount),
-            'start_date': self.start_date.isoformat(),
-            'end_date': self.end_date.isoformat(),
+            'start_date': self.start_date.strftime('%Y-%m-%d'),  # Format date here
+            'end_date': self.end_date.strftime('%Y-%m-%d'),  # Format date here
             'category': self.category,
             'category_icon': category_details['icon'],
             'category_color': category_details['color'],

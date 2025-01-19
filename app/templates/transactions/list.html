@@ -53,20 +53,20 @@
             </div>
         </div>
 
-        <!-- Charts Section -->
-        <div class="charts-section">
-            <div class="chart-container">
-                <div class="chart-header">
-                    <h3>Cash Flow</h3>
-                    <select id="cashflowPeriod" class="chart-period-select">
-                        <option value="7">Last 7 days</option>
-                        <option value="30" selected>Last 30 days</option>
-                        <option value="90">Last 3 months</option>
-                        <option value="180">Last 6 months</option>
-                    </select>
-                </div>
-                <canvas id="cashFlowChart"></canvas>
-            </div>
+{#        <!-- Charts Section -->#}
+{#        <div class="charts-section">#}
+{#            <div class="chart-container">#}
+{#                <div class="chart-header">#}
+{#                    <h3>Cash Flow</h3>#}
+{#                    <select id="cashflowPeriod" class="chart-period-select">#}
+{#                        <option value="7">Last 7 days</option>#}
+{#                        <option value="30" selected>Last 30 days</option>#}
+{#                        <option value="90">Last 3 months</option>#}
+{#                        <option value="180">Last 6 months</option>#}
+{#                    </select>#}
+{#                </div>#}
+{#                <canvas id="cashFlowChart"></canvas>#}
+{#            </div>#}
             <div class="chart-container">
                 <div class="chart-header">
                     <h3>Category Breakdown</h3>
@@ -155,7 +155,11 @@
                 <tbody>
                 {% for transaction in transactions %}
                     <tr class="{{ transaction.transaction_type }}">
-                        <td>{{ moment(transaction.date).format('LL') }}</td>
+                        <td>
+                            {% if transaction.date %}
+                                {{ transaction.date.strftime('%m/%d/%y') }}
+                            {% endif %}
+                        </td>
                         <td>{{ transaction.description }}</td>
                         <td>
                             <div class="category-cell">

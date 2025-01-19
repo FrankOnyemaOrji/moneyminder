@@ -98,7 +98,11 @@
                         <tbody>
                         {% for transaction in transactions %}
                             <tr class="{{ transaction.transaction_type }}">
-                                <td>{{ moment(transaction.date).format('LL') }}</td>
+                                <td>
+                                    {% if transaction.date %}
+                                        {{ transaction.date.strftime('%m/%d/%y') }}
+                                    {% endif %}
+                                </td>
                                 <td>{{ transaction.description }}</td>
                                 <td>
                                     <div class="category-cell">

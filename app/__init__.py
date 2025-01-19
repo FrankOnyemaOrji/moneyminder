@@ -12,6 +12,18 @@ migrate = Migrate()
 login_manager = LoginManager()
 moment = Moment()
 
+from datetime import datetime
+
+def register_filters(app):
+    @app.template_filter('date')
+    def date_filter(value):
+        if isinstance(value, str):
+            try:
+                value = datetime.fromisoformat(value.replace('Z', '+00:00'))
+            except ValueError:
+                return value
+        return value.strftime('%Y-%m-%d')
+
 
 def create_app():
     app = Flask(__name__)
@@ -23,6 +35,8 @@ def create_app():
         return {
             'Category': Category
         }
+
+    register_filters(app)
 
     csrf = CSRFProtect()
     csrf.init_app(app)

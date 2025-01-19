@@ -15,16 +15,16 @@
 .btn {
     display: inline-flex;
     align-items: center;
-    gap: 0.625rem;
-    padding: 0.625rem 1rem;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    border-radius: 6px;
     font-size: 0.875rem;
     font-weight: 500;
-    border-radius: 0.5rem;
     border: none;
     cursor: pointer;
     transition: all 0.2s ease;
     text-decoration: none;
-    line-height: 1.5;
 }
 
 .btn-primary {
