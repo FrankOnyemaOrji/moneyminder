@@ -12,6 +12,7 @@
 # Flask-SQLAlchemy==3.1.1
 # Flask-WTF==1.2.2
 # greenlet==3.1.1
+# gunicorn==23.0.0
 # idna==3.10
 # itsdangerous==2.2.0
 # Jinja2==3.1.5
@@ -21,6 +22,7 @@
 # packaging==24.2
 # pandas==2.2.3
 # pillow==11.1.0
+# psycopg2-binary==2.9.10
 # python-dateutil==2.9.0.post0
 # python-dotenv==1.0.1
 # pytz==2024.2
