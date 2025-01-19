@@ -5,7 +5,12 @@ from datetime import datetime
 from app.models.category import Category
 
 
-class BudgetForm(FlaskForm):
+class NoCSRFForm(FlaskForm):
+    class Meta:
+        csrf = False
+
+
+class BudgetForm(NoCSRFForm):
     amount = DecimalField('Budget Amount',
                           validators=[
                               DataRequired(),

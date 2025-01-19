@@ -55,9 +55,6 @@ function initializeDeleteButtons() {
                 try {
                     const response = await fetch(`/transactions/${transactionId}/delete`, {
                         method: 'POST',
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
                     });
 
                     const data = await response.json();

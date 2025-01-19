@@ -38,9 +38,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch(deleteForm.action, {
                 method: 'POST',
                 body: new FormData(deleteForm),
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
             });
 
             const data = await response.json();

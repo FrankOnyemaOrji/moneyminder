@@ -85,9 +85,7 @@ def reset_password(token):
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
 
-    # Verify token and get user
-    # To be implemented
-    user = None
+    user = None  # Verify token and get user
 
     if not user:
         return redirect(url_for('main.index'))

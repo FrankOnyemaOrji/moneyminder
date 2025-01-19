@@ -6,7 +6,6 @@
 <div class="auth-container">
     <h1>Sign In</h1>
     <form class="auth-form" method="post" action="{{ url_for('auth.login') }}">
-        {{ form.hidden_tag() }}
 
         <div class="form-group">
             {{ form.email.label }}

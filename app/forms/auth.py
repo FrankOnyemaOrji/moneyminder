@@ -4,7 +4,12 @@ from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationE
 from app.models.user import User
 
 
-class LoginForm(FlaskForm):
+class BaseForm(FlaskForm):
+    class Meta:
+        csrf = False  # Disable CSRF for all forms
+
+
+class LoginForm(BaseForm):
     email = StringField('Email', validators=[
         DataRequired(),
         Email()
@@ -16,7 +21,7 @@ class LoginForm(FlaskForm):
     submit = SubmitField('Sign In')
 
 
-class RegistrationForm(FlaskForm):
+class RegistrationForm(BaseForm):
     username = StringField('Username', validators=[
         DataRequired(),
         Length(min=3, max=80)
@@ -47,7 +52,7 @@ class RegistrationForm(FlaskForm):
             raise ValidationError('Please use a different email address.')
 
 
-class ResetPasswordRequestForm(FlaskForm):
+class ResetPasswordRequestForm(BaseForm):
     email = StringField('Email', validators=[
         DataRequired(),
         Email()
@@ -55,7 +60,7 @@ class ResetPasswordRequestForm(FlaskForm):
     submit = SubmitField('Request Password Reset')
 
 
-class ResetPasswordForm(FlaskForm):
+class ResetPasswordForm(BaseForm):
     password = PasswordField('New Password', validators=[
         DataRequired(),
         Length(min=8, message='Password must be at least 8 characters long')

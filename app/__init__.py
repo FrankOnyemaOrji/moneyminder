@@ -1,11 +1,8 @@
 from datetime import datetime, timedelta
-
-from flask import Flask, jsonify
+from flask import Flask
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_moment import Moment
-from flask_wtf.csrf import CSRFProtect, CSRFError
-from wtforms.csrf import session
 
 # Initialize Flask extensions
 from app.models import db
@@ -40,15 +37,8 @@ def create_app(config_class=None):
     migrate.init_app(app, db)
     login_manager.init_app(app)
     moment = Moment(app)
-    csrf = CSRFProtect(app)
-    csrf = CSRFProtect()
-    csrf.init_app(app)
 
     app.app_context().push()
-
-    WTF_CSRF_ENABLED = True
-    WTF_CSRF_TIME_LIMIT = 3600  # 1 hour in seconds
-    WTF_CSRF_SSL_STRICT = True
 
     # Setup Flask-Login
     login_manager.login_view = 'auth.login'
@@ -84,24 +74,6 @@ def create_app(config_class=None):
         app.register_blueprint(transactions, url_prefix='/transactions')
         app.register_blueprint(budgets, url_prefix='/budgets')
         app.register_blueprint(reports_bp)
-
-        # Configure session
-        app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=60)
-        app.config['SESSION_COOKIE_SECURE'] = True
-        app.config['SESSION_COOKIE_HTTPONLY'] = True
-        app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-
-        @app.before_request
-        def make_session_permanent():
-            session.permanent = True
-
-        # Error handler for CSRF errors
-        @app.errorhandler(CSRFError)
-        def handle_csrf_error(e):
-            return jsonify({
-                'error': 'CSRF token validation failed',
-                'message': str(e)
-            }), 400
 
         @login_manager.user_loader
         def load_user(user_id):

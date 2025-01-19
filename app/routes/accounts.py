@@ -56,7 +56,7 @@ def index():
 def create():
     """Create a new account"""
     form = AccountForm()
-    if form.validate_on_submit():
+    if request.method == 'POST' and form.validate():
         try:
             account = Account()
             account.name = form.name.data
@@ -115,7 +115,7 @@ def edit(account_id):
     form = AccountEditForm(obj=account)
     form.current_balance.data = account.balance
 
-    if form.validate_on_submit():
+    if request.method == 'POST' and form.validate():
         try:
             account.name = form.name.data
             account.account_type = form.account_type.data
@@ -164,7 +164,7 @@ def delete(account_id):
 
     form = AccountDeleteForm()
 
-    if form.validate_on_submit():
+    if request.method == 'POST' and form.validate():
         if account.balance == 0:
             try:
                 # Delete all associated transactions first

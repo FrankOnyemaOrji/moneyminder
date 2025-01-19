@@ -14,7 +14,7 @@ bp = Blueprint('reports', __name__, url_prefix='/reports')
 def generate_report():
     form = ReportFilterForm(current_user)
 
-    if request.method == 'POST' and form.validate_on_submit():
+    if request.method == 'POST' and form.validate():
         try:
             # Create filters from form data
             filters = ExportFilters(

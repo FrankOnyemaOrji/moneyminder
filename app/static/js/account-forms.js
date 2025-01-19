@@ -45,9 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 fetch(form.action || window.location.href, {
                     method: 'POST',
                     body: new FormData(form),
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
+
                 })
                 .then(response => {
                     if (!response.ok) {

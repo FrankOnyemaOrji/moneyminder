@@ -3,42 +3,43 @@ from wtforms import StringField, SelectField, DecimalField, TextAreaField, Submi
 from wtforms.validators import DataRequired, Length, Optional, NumberRange
 
 
-class AccountForm(FlaskForm):
+class NoCSRFForm(FlaskForm):
+    class Meta:
+        csrf = False
+
+
+class AccountForm(NoCSRFForm):
     name = StringField('Account Name', validators=[
         DataRequired(),
         Length(min=2, max=100, message='Account name must be between 2 and 100 characters')
     ])
 
     account_type = SelectField('Account Type', validators=[DataRequired()],
-                               choices=[
-                                   ('bank', 'Bank Account'),
-                                   ('cash', 'Cash'),
-                                   ('credit', 'Credit Card'),
-                                   ('investment', 'Investment Account'),
-                                   ('mobile_money', 'Mobile Money'),
-                                   ('other', 'Other')
-                               ]
-                               )
+                            choices=[
+                                ('bank', 'Bank Account'),
+                                ('cash', 'Cash'),
+                                ('credit', 'Credit Card'),
+                                ('investment', 'Investment Account'),
+                                ('mobile_money', 'Mobile Money'),
+                                ('other', 'Other')
+                            ])
 
     currency = SelectField('Currency', validators=[DataRequired()],
-                           choices=[
-                               ('USD', 'US Dollar (USD)'),
-                               ('EUR', 'Euro (EUR)'),
-                               ('GBP', 'British Pound (GBP)'),
-                               ('JPY', 'Japanese Yen (JPY)'),
-                               ('CNY', 'Chinese Yuan (CNY)'),
-                               ('INR', 'Indian Rupee (INR)')
-                           ]
-                           )
+                        choices=[
+                            ('USD', 'US Dollar (USD)'),
+                            ('EUR', 'Euro (EUR)'),
+                            ('GBP', 'British Pound (GBP)'),
+                            ('JPY', 'Japanese Yen (JPY)'),
+                            ('CNY', 'Chinese Yuan (CNY)'),
+                            ('INR', 'Indian Rupee (INR)')
+                        ])
 
     initial_balance = DecimalField('Initial Balance',
-                                   validators=[DataRequired(), NumberRange(min=0)],
-                                   default=0.00
-                                   )
+                                validators=[DataRequired(), NumberRange(min=0)],
+                                default=0.00)
 
     description = TextAreaField('Description',
-                                validators=[Optional(), Length(max=500)]
-                                )
+                            validators=[Optional(), Length(max=500)])
 
     submit = SubmitField('Save Account')
 
@@ -52,5 +53,5 @@ class AccountEditForm(AccountForm):
         del self.initial_balance
 
 
-class AccountDeleteForm(FlaskForm):
+class AccountDeleteForm(NoCSRFForm):
     submit = SubmitField('Confirm Delete')

@@ -130,7 +130,7 @@ def create():
     if category:
         form.update_tag_choices(category)
 
-    if form.validate_on_submit():
+    if request.method == 'POST' and form.validate():
         try:
             # Update tag choices before validation
             form.update_tag_choices(form.category.data)
@@ -184,7 +184,7 @@ def edit(transaction_id):
 
     form = TransactionForm(current_user, obj=transaction)
 
-    if form.validate_on_submit():
+    if request.method == 'POST' and form.validate():
         try:
             transaction.amount = form.amount.data
             transaction.transaction_type = form.transaction_type.data
@@ -301,7 +301,7 @@ def import_transactions():
     """Import transactions from CSV"""
     form = BulkTransactionForm(current_user)
 
-    if form.validate_on_submit():
+    if request.method == 'POST' and form.validate():
         try:
             file = form.file.data
             account = Account.get_by_id(form.account_id.data)
