@@ -7,7 +7,7 @@ from flask_wtf.csrf import CSRFProtect
 from datetime import datetime
 
 # Initialize Flask extensions
-db = SQLAlchemy()
+from app.models import db
 migrate = Migrate()
 login_manager = LoginManager()
 
@@ -39,6 +39,8 @@ def create_app(config_class=None):
     moment = Moment(app)
     csrf = CSRFProtect(app)
 
+    app.app_context().push()
+
     # Setup Flask-Login
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Please log in to access this page.'
@@ -50,7 +52,7 @@ def create_app(config_class=None):
         init_filters(app)
         register_filters(app)
 
-        from .models import User, Account, Category, Transaction, Budget
+        from app.models import User, Account, Category, Transaction, Budget
         from .models.category import Category
 
         @app.context_processor

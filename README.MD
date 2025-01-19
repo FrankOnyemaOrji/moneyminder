@@ -3,7 +3,7 @@
 MoneyMinder is a comprehensive web application developed for Code of Africa GmbH that helps users manage their personal finances effectively. It provides a user-friendly interface for tracking multiple accounts, managing transactions, setting budgets, and generating detailed financial reports.
 
 ## Live Demo
-🌐 [MoneyMinder Live](https://moneyminder.codeofafrica.com)
+🌐 [MoneyMinder Live](https://moneyminder-khus.onrender.com)
 
 ## Project Overview Video
 🎥 [Watch the Project Demo](https://youtu.be/your-video-link)

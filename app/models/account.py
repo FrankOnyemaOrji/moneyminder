@@ -1,5 +1,4 @@
-from app import db
-from app.models import BaseModel
+from app.models import db, BaseModel
 from decimal import Decimal
 
 

@@ -1,9 +1,7 @@
-from app import db
-from app.models import BaseModel
+from app.models import db, BaseModel
 from datetime import datetime
 from decimal import Decimal
 from app.models.category import Category
-from app.models.transaction import Transaction
 
 
 class Budget(db.Model, BaseModel):
@@ -44,6 +42,7 @@ class Budget(db.Model, BaseModel):
 
     def get_spent_amount(self):
         """Calculate how much has been spent in this budget period"""
+        from app.models.transaction import Transaction
         query = db.session.query(db.func.sum(Transaction.amount)).filter(
             Transaction.category == self.category,
             Transaction.date >= self.start_date,
