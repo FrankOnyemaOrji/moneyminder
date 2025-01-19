@@ -6,7 +6,7 @@ MoneyMinder is a comprehensive web application developed for Code of Africa GmbH
 🌐 [MoneyMinder Live](https://moneyminder-khus.onrender.com)
 
 ## Project Overview Video
-🎥 [Watch the Project Demo](https://youtu.be/your-video-link)
+🎥 [Watch the Project Demo](https://youtu.be/J0N59Giy0kM)
 
 ## Features
 
@@ -142,7 +142,7 @@ Detailed deployment instructions are available in the deployment guide.
 - Session management
 - Input validation
 
-## Roadmap
+## Next Steps
 
 - [ ] Mobile app development
 - [ ] Multi-currency support
