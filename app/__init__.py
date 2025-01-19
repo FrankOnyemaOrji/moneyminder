@@ -1,13 +1,14 @@
+from datetime import datetime
+
 from flask import Flask
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_moment import Moment
-from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
-from datetime import datetime
 
 # Initialize Flask extensions
 from app.models import db
+
 migrate = Migrate()
 login_manager = LoginManager()
 
@@ -24,7 +25,8 @@ def register_filters(app):
 
 
 def create_app(config_class=None):
-    app = Flask(__name__)
+    app = Flask(__name__, static_url_path='/static',
+                static_folder='static')
 
     # Load config
     if config_class is None:

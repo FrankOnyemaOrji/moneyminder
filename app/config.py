@@ -21,3 +21,11 @@ class Config:
     MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS') is not None
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
+
+
+class ProductionConfig(Config):
+    DEBUG = False
+    TESTING = False
+    # Configure proper logging
+    import logging
+    logging.basicConfig(level=logging.INFO)
