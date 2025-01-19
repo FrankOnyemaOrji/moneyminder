@@ -11,9 +11,9 @@
 <div class="dashboard">
     <!-- Welcome Section -->
     <div class="welcome-section">
-        <h1>Welcome back, {{ current_user.username }}!</h1>
-        <p class="date">{{ moment().format('MMMM DD, YYYY') }}</p>
-    </div>
+    <h1>{{ greeting }}, {{ current_user.username }}!</h1>
+    <p class="date">{{ moment().format('MMMM DD, YYYY') }}</p>
+</div>
 
     <!-- Financial Overview -->
     <div class="dashboard-grid">

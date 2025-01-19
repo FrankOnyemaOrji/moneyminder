@@ -7,6 +7,47 @@ document.addEventListener('DOMContentLoaded', function() {
         }).format(amount);
     };
 
+    // Time-based greeting update
+    const updateGreeting = () => {
+        const hour = new Date().getHours();
+        const welcomeHeader = document.querySelector('.welcome-section h1');
+        const username = welcomeHeader.textContent.split(',')[1].trim().replace('!', '');
+
+        let greeting;
+        if (hour >= 5 && hour < 12) {
+            greeting = 'Good morning';
+        } else if (hour >= 12 && hour < 17) {
+            greeting = 'Good afternoon';
+        } else {
+            greeting = 'Good evening';
+        }
+
+        welcomeHeader.textContent = `${greeting}, ${username}!`;
+    };
+
+    // Update greeting immediately and set interval
+    updateGreeting();
+    setInterval(updateGreeting, 60000); // Update every minute
+
+    // Update the date
+    const updateDate = () => {
+        const dateElement = document.querySelector('.welcome-section .date');
+        if (dateElement) {
+            const now = new Date();
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            dateElement.textContent = now.toLocaleDateString('en-US', options);
+        }
+    };
+
+    // Update date immediately
+    updateDate();
+
+    // Update date every minute along with the greeting
+    setInterval(() => {
+        updateGreeting();
+        updateDate();
+    }, 60000);
+
     // Animate numbers counting up
     const animateValue = (element, start, end, duration) => {
         let startTimestamp = null;

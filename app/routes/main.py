@@ -8,6 +8,16 @@ from datetime import datetime, timedelta
 main = Blueprint('main', __name__)
 
 
+def get_time_based_greeting():
+    hour = datetime.now().hour
+    if 5 <= hour < 12:
+        return "Good morning"
+    elif 12 <= hour < 17:
+        return "Good afternoon"
+    else:
+        return "Good evening"
+
+
 @main.route('/')
 @main.route('/index')
 @main.route('/dashboard')
@@ -47,7 +57,7 @@ def index():
     active_budgets = Budget.get_active_budgets(current_user.id)
     budget_status = [
         {
-            'category': budget.category.name,
+            'category': budget.category,
             'amount': float(budget.amount),
             'spent': float(budget.get_spent_amount()),
             'remaining': float(budget.get_remaining_amount()),
@@ -61,7 +71,11 @@ def index():
     total_budget = sum(float(budget.amount) for budget in active_budgets)
     total_spent = sum(float(budget.get_spent_amount()) for budget in active_budgets)
 
+    # Get the time-based greeting
+    greeting = get_time_based_greeting()
+
     return render_template('dashboard/index.html',
+                           greeting=greeting,
                            accounts=accounts,
                            total_balance=total_balance,
                            recent_transactions=recent_transactions,

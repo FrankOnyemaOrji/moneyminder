@@ -4,216 +4,209 @@
 {% block title %}Budgets{% endblock %}
 
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/budget.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/budget.css') }}">
 {% endblock %}
 
 {% block content %}
-<div class="budget-container">
-    <header class="page-header">
-        <div class="header-content">
-            <div class="header-title">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="budget-container">
+        <!-- Updated Header Area -->
+        <div class="page-title">
+            <div>
                 <h1>Budgets</h1>
-                <p class="header-description">Manage your spending limits and track expenses by category</p>
+                <p class="subtitle">Manage your spending limits and track expenses by category</p>
             </div>
-            <div class="header-actions">
-                <button class="btn btn-primary create-budget-btn">
-                    <i class="fas fa-plus"></i> New Budget
+            <div class="action-buttons">
+                <a href="{{ url_for('main.index') }}" class="back-button">
+                    <svg class="back-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20"
+                         height="20">
+                        <path d="M15 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                    </svg>
+                    Back to Dashboard
+                </a>
+                <button class="new-button create-budget-btn">
+                    <svg class="plus-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20"
+                         height="20">
+                        <path d="M12 6v12M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                    </svg>
+                    New Budget
                 </button>
             </div>
         </div>
-    </header>
 
-    <div class="budget-grid">
-        {% for budget in budgets %}
-        <div class="budget-card" style="border-left: 4px solid {{ budget.category_color }}">
-            <div class="budget-header">
-                <i class="fas fa-{{ budget.category_icon }}" style="color: {{ budget.category_color }}"></i>
-                <h3>{{ budget.category }}</h3>
-                {% if budget.tag %}
-                <span class="budget-tag">{{ budget.tag }}</span>
-                {% endif %}
-            </div>
+        <!-- Budget Grid -->
+        <div class="budget-grid">
+            {% for budget in budgets %}
+                <div class="budget-card" style="border-left: 4px solid {{ budget.category_color }}">
+                    <div class="budget-header">
+                        <i class="fas fa-{{ budget.category_icon }}" style="color: {{ budget.category_color }}"></i>
+                        <h3>{{ budget.category }}</h3>
+                        {% if budget.tag %}
+                            <span class="budget-tag">{{ budget.tag }}</span>
+                        {% endif %}
+                    </div>
 
-            <div class="budget-details">
-                <div class="budget-progress">
-                    <div class="progress-bar">
-                        <div class="progress" style="width: {{ budget.spending_percentage }}%;
-                            background-color: {% if budget.is_exceeded %}#ef4444{% else %}{{ budget.category_color }}{% endif %}">
+                    <div class="budget-details">
+                        <div class="budget-progress">
+                            <div class="progress-bar">
+                                <div class="progress" style="width: {{ budget.spending_percentage }}%;
+                                        background-color: {% if budget.is_exceeded %}#ef4444{% else %}{{ budget.category_color }}{% endif %}">
+                                </div>
+                            </div>
+                            <span class="progress-text">{{ "%.1f"|format(budget.spending_percentage) }}%</span>
                         </div>
-                    </div>
-                    <span class="progress-text">{{ "%.1f"|format(budget.spending_percentage) }}%</span>
-                </div>
 
-                <div class="budget-amounts">
-                    <div class="amount-item">
-                        <span class="label">Spent</span>
-                        <span class="value">${{ "%.2f"|format(budget.spent_amount) }}</span>
-                    </div>
-                    <div class="amount-item">
-                        <span class="label">Remaining</span>
-                        <span class="value {% if budget.is_exceeded %}text-danger{% endif %}">
+                        <div class="budget-amounts">
+                            <div class="amount-item">
+                                <span class="label">Spent</span>
+                                <span class="value">${{ "%.2f"|format(budget.spent_amount) }}</span>
+                            </div>
+                            <div class="amount-item">
+                                <span class="label">Remaining</span>
+                                <span class="value {% if budget.is_exceeded %}text-danger{% endif %}">
                             ${{ "%.2f"|format(budget.remaining_amount) }}
                         </span>
-                    </div>
-                    <div class="amount-item">
-                        <span class="label">Total</span>
-                        <span class="value">${{ "%.2f"|format(budget.amount) }}</span>
-                    </div>
-                </div>
-
-                <div class="budget-period">
-                    <span>{{ budget.start_date.split('T')[0] }} - {{ budget.end_date.split('T')[0] }}</span>
-                </div>
-            </div>
-
-            <div class="budget-actions">
-                <button onclick="window.editBudget('{{ budget.id }}')" class="btn btn-icon" title="Edit Budget">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button onclick="window.deleteBudget('{{ budget.id }}')" class="btn btn-icon btn-danger" title="Delete Budget">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-        </div>
-        {% endfor %}
-
-        {% if not budgets %}
-        <div class="empty-state">
-            <div class="empty-state-icon">
-                <i class="fas fa-coins"></i>
-            </div>
-            <h3>No Budgets Found</h3>
-            <p>Start by creating your first budget to track your spending.</p>
-            <button class="btn btn-primary create-budget-btn">
-                <i class="fas fa-plus"></i> Create Budget
-            </button>
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- Budget Modal -->
-    <div id="budgetModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="modalTitle">New Budget</h2>
-                <button type="button" class="close-modal" onclick="window.closeBudgetModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <form id="budgetForm" class="budget-form">
-                {{ form.hidden_tag() }}
-                <input type="hidden" id="budgetId" name="id">
-
-                <div class="modal-body">
-                    <div class="form-section">
-                        <h3>Budget Details</h3>
-                        <div class="form-group">
-                            {{ form.category.label }}
-                            <div class="select-wrapper">
-                                {{ form.category(class="form-control") }}
-                                <i class="fas fa-chevron-down select-arrow"></i>
                             </div>
-                            {% for error in form.category.errors %}
-                                <span class="error"><i class="fas fa-exclamation-circle"></i> {{ error }}</span>
-                            {% endfor %}
+                            <div class="amount-item">
+                                <span class="label">Total</span>
+                                <span class="value">${{ "%.2f"|format(budget.amount) }}</span>
+                            </div>
                         </div>
 
-                        <div class="form-group">
-                            {{ form.tag.label }}
-                            <div class="select-wrapper">
-                                {{ form.tag(class="form-control") }}
-                                <i class="fas fa-chevron-down select-arrow"></i>
-                            </div>
-                            {% for error in form.tag.errors %}
-                                <span class="error"><i class="fas fa-exclamation-circle"></i> {{ error }}</span>
-                            {% endfor %}
-                        </div>
-
-                        <div class="form-group">
-                            {{ form.amount.label }}
-                            <div class="input-group">
-                                <div class="input-group-text">$</div>
-                                {{ form.amount(class="form-control", placeholder="0.00") }}
-                            </div>
-                            {% for error in form.amount.errors %}
-                                <span class="error"><i class="fas fa-exclamation-circle"></i> {{ error }}</span>
-                            {% endfor %}
+                        <div class="budget-period">
+                            <span>{{ budget.start_date.split('T')[0] }} - {{ budget.end_date.split('T')[0] }}</span>
                         </div>
                     </div>
 
-                    <div class="form-section">
-                        <h3>Time Period</h3>
-                        <div class="form-group">
-                            <label>Quick Period Selection</label>
-                            <div class="select-wrapper">
-                                <select id="quickPeriod" class="form-control">
-                                    <option value="month">This Month</option>
-                                    <option value="quarter">This Quarter</option>
-                                    <option value="year">This Year</option>
-                                    <option value="custom">Custom Range</option>
-                                </select>
-                                <i class="fas fa-chevron-down select-arrow"></i>
-                            </div>
-                        </div>
-
-                        <div class="date-range-group">
-                            <div class="form-group">
-                                {{ form.start_date.label }}
-                                <div class="input-group">
-                                    {{ form.start_date(class="form-control") }}
-                                    <div class="input-group-text">
-                                        <i class="fas fa-calendar"></i>
-                                    </div>
-                                </div>
-                                {% for error in form.start_date.errors %}
-                                    <span class="error"><i class="fas fa-exclamation-circle"></i> {{ error }}</span>
-                                {% endfor %}
-                            </div>
-
-                            <div class="form-group">
-                                {{ form.end_date.label }}
-                                <div class="input-group">
-                                    {{ form.end_date(class="form-control") }}
-                                    <div class="input-group-text">
-                                        <i class="fas fa-calendar"></i>
-                                    </div>
-                                </div>
-                                {% for error in form.end_date.errors %}
-                                    <span class="error"><i class="fas fa-exclamation-circle"></i> {{ error }}</span>
-                                {% endfor %}
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            {{ form.notification_threshold.label }}
-                            <div class="input-group">
-                                {{ form.notification_threshold(class="form-control") }}
-                                <div class="input-group-text">%</div>
-                            </div>
-                            {% for error in form.notification_threshold.errors %}
-                                <span class="error"><i class="fas fa-exclamation-circle"></i> {{ error }}</span>
-                            {% endfor %}
-                        </div>
+                    <div class="budget-actions">
+                        <button onclick="window.editBudget('{{ budget.id }}')" class="btn btn-icon" title="Edit Budget">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="window.deleteBudget('{{ budget.id }}')" class="btn btn-icon btn-danger"
+                                title="Delete Budget">
+                            <i class="fas fa-trash"></i>
+                        </button>
                     </div>
                 </div>
+            {% endfor %}
 
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="window.closeBudgetModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i>
-                        Save Budget
+            {% if not budgets %}
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                    <h3>No Budgets Found</h3>
+                    <p>Start by creating your first budget to track your spending.</p>
+                    <button class="new-button create-budget-btn">
+                        <svg class="plus-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                             width="20" height="20">
+                            <path d="M12 6v12M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                  stroke-linejoin="round"/>
+                        </svg>
+                        Create Budget
                     </button>
                 </div>
-            </form>
+            {% endif %}
+        </div>
+
+        <!-- Budget Modal -->
+        <div id="budgetModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modalTitle">New Budget</h2>
+                    <button type="button" class="close-modal" onclick="window.closeBudgetModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <form id="budgetForm" class="budget-form">
+                    {{ form.csrf_token }}
+                    <input type="hidden" id="budgetId" name="budgetId">
+
+                    <div class="modal-body">
+                        <div class="form-section">
+                            <h3>Budget Details</h3>
+                            <div class="form-group">
+                                {{ form.category.label }}
+                                <div class="select-wrapper">
+                                    {{ form.category(class="form-control") }}
+                                    <i class="fas fa-chevron-down select-arrow"></i>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                {{ form.tag.label }}
+                                <div class="select-wrapper">
+                                    {{ form.tag(class="form-control") }}
+                                    <i class="fas fa-chevron-down select-arrow"></i>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                {{ form.amount.label }}
+                                <div class="input-group">
+                                    <div class="input-group-text">$</div>
+                                    {{ form.amount(class="form-control", placeholder="0.00") }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3>Time Period</h3>
+                            <div class="form-group">
+                                <label>Quick Period Selection</label>
+                                <div class="select-wrapper">
+                                    <select id="quickPeriod" class="form-control">
+                                        <option value="month">This Month</option>
+                                        <option value="quarter">This Quarter</option>
+                                        <option value="year">This Year</option>
+                                        <option value="custom">Custom Range</option>
+                                    </select>
+                                    <i class="fas fa-chevron-down select-arrow"></i>
+                                </div>
+                            </div>
+
+                            <div class="date-range-group">
+                                <div class="form-group">
+                                    {{ form.start_date.label }}
+                                    {{ form.start_date(class="form-control", id="start_date") }}
+                                </div>
+
+                                <div class="form-group">
+                                    {{ form.end_date.label }}
+                                    {{ form.end_date(class="form-control", id="end_date") }}
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                {{ form.notification_threshold.label }}
+                                <div class="input-group">
+                                    {{ form.notification_threshold(class="form-control") }}
+                                    <div class="input-group-text">%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="window.closeBudgetModal()">Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                            Save Budget
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-</div>
 {% endblock %}
 
 {% block scripts %}
-<script>
-    // Pass category data to JavaScript
-    const categoryData = {{ categories|tojson|safe }};
-</script>
-<script src="{{ url_for('static', filename='js/budget.js') }}"></script>
+    <script>
+        const categoryData = {{ categories|tojson|safe }};
+    </script>
+    <script src="{{ url_for('static', filename='js/budget.css') }}"></script>
 {% endblock %}

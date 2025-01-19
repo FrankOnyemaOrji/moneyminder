@@ -1,5 +1,5 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // Form elements initialization
+document.addEventListener('DOMContentLoaded', function () {
+    // Form elements initialization with corrected IDs
     const elements = {
         form: document.getElementById('budgetForm'),
         modal: document.getElementById('budgetModal'),
@@ -8,35 +8,57 @@ document.addEventListener('DOMContentLoaded', function() {
         tag: document.getElementById('tag'),
         amount: document.getElementById('amount'),
         quickPeriod: document.getElementById('quickPeriod'),
-        startDate: document.getElementById('startDate'),
-        endDate: document.getElementById('endDate'),
+        startDate: document.getElementById('start_date'),  // Use underscore
+        endDate: document.getElementById('end_date'),      // Use underscore
         submitButton: document.querySelector('button[type="submit"]'),
-        createButtons: document.querySelectorAll('.new-budget-btn, .create-budget-btn')
+        createButtons: document.querySelectorAll('.create-budget-btn')
     };
+
+    // Debug logging
+    console.log('DOM loaded');
+    console.log('Elements found:', {
+        form: elements.form,
+        modal: elements.modal,
+        startDate: elements.startDate,
+        endDate: elements.endDate,
+        quickPeriod: elements.quickPeriod,
+        createButtons: elements.createButtons?.length
+    });
 
     // Initialize form and attach event listeners
     initializeForm();
     attachEventListeners();
 
     // Modal Functions
-    function openBudgetModal(budgetId = null) {
-        if (!elements.modal) {
-            console.error('Modal element not found');
-            return;
-        }
-        elements.modalTitle.textContent = budgetId ? 'Edit Budget' : 'New Budget';
-        elements.form.reset();
-
-        if (budgetId) {
-            fetchBudgetData(budgetId);
-        } else {
-            initializeForm();
-        }
-
-        elements.modal.style.display = 'block';
+    // When opening modal for edit
+function openBudgetModal(budgetId = null) {
+    console.log('Opening modal for budget:', budgetId);
+    if (!elements.modal) {
+        console.error('Modal element not found');
+        return;
     }
 
+    elements.modalTitle.textContent = budgetId ? 'Edit Budget' : 'New Budget';
+    elements.form.reset();
+
+    // Update hidden budget ID field
+    const budgetIdInput = document.getElementById('budgetId');
+    if (budgetIdInput) {
+        budgetIdInput.value = budgetId || '';
+    }
+
+    if (budgetId) {
+        fetchBudgetData(budgetId);
+    } else {
+        initializeForm();
+        initializeCategories();
+    }
+
+    elements.modal.style.display = 'block';
+}
+
     function closeBudgetModal() {
+        console.log('Closing modal');
         if (!elements.modal) {
             console.error('Modal element not found');
             return;
@@ -46,57 +68,66 @@ document.addEventListener('DOMContentLoaded', function() {
         clearAllErrors();
     }
 
-    // Make functions available globally with proper scoping
+    // Make functions available globally
     window.openBudgetModal = openBudgetModal;
     window.closeBudgetModal = closeBudgetModal;
-    window.editBudget = function(budgetId) {
+    window.editBudget = function (budgetId) {
         openBudgetModal(budgetId);
     };
-    window.deleteBudget = async function(budgetId) {
-        if (!confirm('Are you sure you want to delete this budget?')) {
-            return;
-        }
 
-        try {
-            const response = await fetch(`/api/budgets/${budgetId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
+    // Delete budget function
+window.deleteBudget = async function (budgetId) {
+    // Custom confirmation dialog instead of default browser confirm
+    if (!window.confirm('Are you sure you want to delete this budget?')) {
+        return;
+    }
 
-            if (!response.ok) {
-                throw new Error('Failed to delete budget');
+    try {
+        const response = await fetch(`/budgets/api/budgets/${budgetId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrf_token]').value // Add CSRF token
             }
+        });
 
-            showSuccess('Budget deleted successfully!');
-            setTimeout(() => window.location.reload(), 1500);
-        } catch (error) {
-            console.error('Error:', error);
-            showError('Failed to delete budget. Please try again.');
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to delete budget');
         }
-    };
+
+        showSuccess('Budget deleted successfully!');
+
+        // Delay reload to show success message
+        setTimeout(() => {
+            window.location.reload();
+        }, 1500);
+    } catch (error) {
+        console.error('Error:', error);
+        showError(error.message || 'Failed to delete budget. Please try again.');
+    }
+};
 
     // Event Listeners Initialization
     function attachEventListeners() {
         // Direct click handler for new budget buttons
-        document.querySelectorAll('.new-budget-btn, .create-budget-btn').forEach(button => {
-            button.addEventListener('click', function(e) {
+        const createButtons = document.querySelectorAll('.create-budget-btn');
+        console.log('Found create buttons:', createButtons.length);
+
+        createButtons.forEach(button => {
+            button.addEventListener('click', function (e) {
+                console.log('Button clicked');
                 e.preventDefault();
+                e.stopPropagation(); // Prevent event bubbling
                 openBudgetModal();
             });
         });
 
-        // Legacy support for onclick attributes
-        elements.createButtons?.forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                openBudgetModal();
+        if (elements.category) {
+            elements.category.addEventListener('change', function () {
+                // Only call handleCategoryChange, remove updateTags call since it's called inside handleCategoryChange
+                handleCategoryChange.call(this);
             });
-        });
-
-        if (elements.category && elements.tag) {
-            elements.category.addEventListener('change', handleCategoryChange);
         }
 
         if (elements.quickPeriod) {
@@ -113,16 +144,73 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Close modal when clicking outside
-        window.addEventListener('click', function(event) {
+        window.addEventListener('click', function (event) {
             if (event.target === elements.modal) {
                 closeBudgetModal();
             }
         });
     }
 
+    // Initialize categories and tags
+    function initializeCategories() {
+        console.log('Initializing categories');
+        if (!elements.category) {
+            console.error('Category element not found');
+            return;
+        }
+
+        // Clear existing options
+        elements.category.innerHTML = '<option value="">Select Category</option>';
+
+        // Add categories from the server-provided data
+        if (typeof categoryData !== 'undefined') {
+            console.log('Category data available:', categoryData);
+            for (const [category, details] of Object.entries(categoryData)) {
+                const option = new Option(category, category);
+                elements.category.appendChild(option);
+            }
+        } else {
+            console.error('Category data not available');
+        }
+    }
+
+    function updateTags(category) {
+        if (!elements.tag) {
+            console.error('Tag element not found');
+            return;
+        }
+
+        // Clear existing options
+        elements.tag.innerHTML = '<option value="">Select Tag</option>';
+
+        // Add tags from categoryData
+        if (category && categoryData && categoryData[category] && categoryData[category].tags) {
+            const tags = categoryData[category].tags;
+            console.log('Adding tags for category:', category, tags);
+
+            tags.forEach(tag => {
+                const option = new Option(tag, tag);
+                elements.tag.appendChild(option);
+            });
+
+            // Enable the tag select
+            elements.tag.disabled = false;
+        }
+    }
+
+
     // Form Handling Functions
     function initializeForm() {
-        updateDateRange();
+        console.log('Initializing form with elements:', {
+            quickPeriod: elements.quickPeriod?.id,
+            startDate: elements.startDate?.id,
+            endDate: elements.endDate?.id
+        });
+
+        if (elements.quickPeriod && elements.startDate && elements.endDate) {
+            updateDateRange();
+        }
+
         if (elements.category && elements.category.value) {
             handleCategoryChange.call(elements.category);
         }
@@ -130,6 +218,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function handleCategoryChange() {
         const category = this.value;
+        console.log('Category changed to:', category);
+
         if (!category) {
             resetTagSelect();
             return;
@@ -137,11 +227,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             showLoading(elements.tag);
-            const response = await fetch(`/api/categories/${encodeURIComponent(category)}/tags`);
-            if (!response.ok) throw new Error('Failed to fetch tags');
-
-            const tags = await response.json();
-            updateTagSelect(tags);
+            // Use categoryData directly instead of API call
+            if (categoryData && categoryData[category]) {
+                updateTags(category);  // Pass the category, not the tags
+            } else {
+                throw new Error('Category data not found');
+            }
         } catch (error) {
             console.error('Error:', error);
             showError('Failed to load tags');
@@ -152,45 +243,57 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function handleBudgetSubmit(e) {
-        e.preventDefault();
+    e.preventDefault();
 
-        if (!validateForm()) {
-            return;
-        }
-
-        const budgetId = document.getElementById('budgetId').value;
-        const formData = new FormData(elements.form);
-        const data = Object.fromEntries(formData.entries());
-
-        try {
-            showSubmitLoading();
-            const response = await fetch(budgetId ? `/api/budgets/${budgetId}` : '/api/budgets', {
-                method: budgetId ? 'PUT' : 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            });
-
-            const result = await response.json();
-            if (!response.ok) {
-                throw new Error(result.error || 'Failed to save budget');
-            }
-
-            showSuccess(`Budget ${budgetId ? 'updated' : 'created'} successfully!`);
-            setTimeout(() => window.location.reload(), 1500);
-        } catch (error) {
-            console.error('Error:', error);
-            showError(error.message || 'Failed to save budget');
-        } finally {
-            hideSubmitLoading();
-        }
+    if (!validateForm()) {
+        return;
     }
+
+    const budgetId = document.getElementById('budgetId')?.value;
+    const isEdit = !!budgetId;
+
+    try {
+        showSubmitLoading();
+        const formData = new FormData(elements.form);
+
+        // Convert FormData to JSON object
+        const jsonData = {};
+        formData.forEach((value, key) => {
+            jsonData[key] = value;
+        });
+
+        const url = isEdit ? `/budgets/api/budgets/${budgetId}` : '/budgets/';
+        const method = isEdit ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrf_token]').value
+            },
+            body: JSON.stringify(jsonData)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to save budget');
+        }
+
+        const result = await response.json();
+        showSuccess(`Budget ${isEdit ? 'updated' : 'created'} successfully!`);
+        setTimeout(() => window.location.reload(), 1500);
+    } catch (error) {
+        console.error('Error:', error);
+        showError(error.message || 'Failed to save budget');
+    } finally {
+        hideSubmitLoading();
+    }
+}
 
     async function fetchBudgetData(budgetId) {
         try {
             showLoading(elements.form);
-            const response = await fetch(`/api/budgets/${budgetId}`);
+            const response = await fetch(`/budgets/api/budgets/${budgetId}`);
             if (!response.ok) {
                 throw new Error('Failed to fetch budget data');
             }
@@ -216,7 +319,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Rest of your existing utility functions...
+    // Utility Functions
     function handleAmountInput(e) {
         this.value = this.value.replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1');
         if (this.value.includes('.')) {
@@ -265,10 +368,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function validateForm() {
         let isValid = true;
         const requiredFields = [
-            { element: elements.amount, message: 'Please enter an amount' },
-            { element: elements.startDate, message: 'Please select a start date' },
-            { element: elements.endDate, message: 'Please select an end date' },
-            { element: elements.category, message: 'Please select a category' }
+            {element: elements.amount, message: 'Please enter an amount'},
+            {element: elements.startDate, message: 'Please select a start date'},
+            {element: elements.endDate, message: 'Please select an end date'},
+            {element: elements.category, message: 'Please select a category'}
         ];
 
         clearAllErrors();
@@ -297,6 +400,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return isValid;
     }
 
+    // Helper Functions
     function formatDateForInput(date) {
         return date.toISOString().split('T')[0];
     }

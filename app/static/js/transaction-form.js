@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Form elements
     const form = document.querySelector('.transaction-form');
     const typeSelect = document.querySelector('select[name="transaction_type"]');
@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (categorySelect && tagSelect) {
-        categorySelect.addEventListener('change', function(event) {
+        categorySelect.addEventListener('change', function (event) {
             handleCategoryChange.call(this, event);
         });
     }
@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Initialize category tags if category is selected
         if (categorySelect && categorySelect.value && tagSelect) {
-            handleCategoryChange.call(categorySelect, { target: categorySelect });
+            handleCategoryChange.call(categorySelect, {target: categorySelect});
         }
     }
 
@@ -185,6 +185,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function confirmDelete(event) {
+        event.preventDefault();
+        if (confirm('Are you sure you want to delete this transaction? This action cannot be undone.')) {
+            event.target.submit();
+        }
+        return false;
+    }
+
     function updateTagSelect(tags) {
         // Save current selected value if any
         const currentValue = tagSelect.value;
@@ -214,10 +222,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function validateForm() {
         let isValid = true;
         const requiredFields = [
-            { element: amountInput, message: 'Please enter an amount' },
-            { element: dateInput, message: 'Please select a date' },
-            { element: categorySelect, message: 'Please select a category' },
-            { element: tagSelect, message: 'Please select a tag' }
+            {element: amountInput, message: 'Please enter an amount'},
+            {element: dateInput, message: 'Please select a date'},
+            {element: categorySelect, message: 'Please select a category'},
+            {element: tagSelect, message: 'Please select a tag'}
         ];
 
         // Clear all previous errors first
@@ -225,7 +233,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Validate transaction type
         const selectedType = document.querySelector('.transaction-type-radio:checked') ||
-                           (typeSelect && typeSelect.value);
+            (typeSelect && typeSelect.value);
         if (!selectedType) {
             const typeContainer = document.querySelector('.type-selector');
             if (typeContainer) {

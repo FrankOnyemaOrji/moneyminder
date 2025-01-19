@@ -1,37 +1,42 @@
-# budgets.py
-from flask import Blueprint, render_template, request, jsonify, abort
+from flask import Blueprint, render_template, request, jsonify
 from flask_login import login_required, current_user
-from datetime import datetime
+
+from app import db
+from app.forms.budget import BudgetForm
 from app.models.budget import Budget
 from app.models.category import Category
-from app.forms.budget import BudgetForm
-from app import db
 
-budgets = Blueprint('budgets', __name__)
+budgets = Blueprint('budgets', __name__, url_prefix='/budgets')  # Add url_prefix
 
 
-@budgets.route('/')
+@budgets.route('/', methods=['GET'])  # Changed from /budgets to /
 @login_required
 def index():
     """Display all budgets"""
     active_budgets = Budget.get_active_budgets(current_user.id)
     categories = Category.get_all_categories()
     form = BudgetForm()
+
+    form.category.choices = [('', 'Select Category')] + [(cat, cat) for cat in categories.keys()]
+
     return render_template('budgets/index.html',
                            budgets=[b.to_dict() for b in active_budgets],
                            categories=categories,
                            form=form)
 
 
-# Budget CRUD Operations
-@budgets.route('/api/budgets', methods=['POST'])
+@budgets.route('/', methods=['POST'])  # Changed from /budgets to /
 @login_required
 def create_budget():
     """Create a new budget"""
-    form = BudgetForm()
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
 
-    if form.validate_on_submit():
-        try:
+        form = BudgetForm(data=data)
+
+        if form.validate():
             budget = Budget.create_budget(
                 user_id=current_user.id,
                 amount=float(form.amount.data),
@@ -39,15 +44,16 @@ def create_budget():
                 start_date=form.start_date.data,
                 end_date=form.end_date.data,
                 tag=form.tag.data if form.tag.data else None,
-                notification_threshold=form.notification_threshold.data
+                notification_threshold=form.notification_threshold.data if hasattr(form,
+                                                                                   'notification_threshold') else None
             )
             return jsonify(budget.to_dict()), 201
-        except ValueError as e:
-            return jsonify({'error': str(e)}), 400
-        except Exception as e:
-            return jsonify({'error': 'Failed to create budget'}), 500
+        else:
+            return jsonify({'errors': form.errors}), 400
 
-    return jsonify({'errors': form.errors}), 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 
 @budgets.route('/api/budgets/<budget_id>', methods=['GET'])
@@ -63,26 +69,35 @@ def get_budget(budget_id):
 def update_budget(budget_id):
     """Update a specific budget"""
     budget = Budget.query.filter_by(id=budget_id, user_id=current_user.id).first_or_404()
-    form = BudgetForm()
 
-    if form.validate_on_submit():
+    # Get JSON data from request
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    form = BudgetForm(data=data)  # Initialize form with JSON data
+
+    if form.validate():  # Use validate() instead of validate_on_submit() for API endpoints
         try:
             budget.amount = float(form.amount.data)
             budget.category = form.category.data
             budget.tag = form.tag.data if form.tag.data else None
             budget.start_date = form.start_date.data
             budget.end_date = form.end_date.data
-            budget.notification_threshold = form.notification_threshold.data
+            budget.notification_threshold = form.notification_threshold.data if hasattr(form,
+                                                                                        'notification_threshold') else None
 
             db.session.commit()
             return jsonify(budget.to_dict())
         except ValueError as e:
+            db.session.rollback()
             return jsonify({'error': str(e)}), 400
         except Exception as e:
             db.session.rollback()
             return jsonify({'error': 'Failed to update budget'}), 500
 
     return jsonify({'errors': form.errors}), 400
+
 
 
 @budgets.route('/api/budgets/<budget_id>', methods=['DELETE'])

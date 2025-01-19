@@ -1,18 +1,20 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
 from flask_login import LoginManager
+from flask_migrate import Migrate
 from flask_moment import Moment
-from .config import Config
-from app.utils.filters import init_filters
+from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
+
+from app.utils.filters import init_filters
+from .config import Config
 
 db = SQLAlchemy()
 migrate = Migrate()
 login_manager = LoginManager()
-moment = Moment()
+# moment = Moment()
 
 from datetime import datetime
+
 
 def register_filters(app):
     @app.template_filter('date')
@@ -29,6 +31,7 @@ def create_app():
     app = Flask(__name__)
     init_filters(app)
     app.config.from_object(Config)
+    moment = Moment(app)
 
     @app.context_processor
     def utility_processor():
