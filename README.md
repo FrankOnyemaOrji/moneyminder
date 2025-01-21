@@ -4,6 +4,9 @@ MoneyMinder is a comprehensive web application developed for Code of Africa GmbH
 
 ## Live Demo
 🌐 [MoneyMinder Live](https://moneyminder-khus.onrender.com)
+ ```bash
+   Please note that the live demo above is hosted on a free tier on render and may take a few seconds to load.
+   ```
 
 ## Project Overview Video
 🎥 [Watch the Project Demo](https://youtu.be/J0N59Giy0kM)
