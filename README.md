@@ -82,7 +82,7 @@ MoneyMinder is a comprehensive web application developed for Code of Africa GmbH
 
 1. Clone the repository:
    ```bash
-   git https://github.com/FrankOnyemaOrji/moneyminder.git
+   git clone https://github.com/FrankOnyemaOrji/moneyminder.git
    cd moneyminder
    ```
 
