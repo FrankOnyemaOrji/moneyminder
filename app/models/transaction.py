@@ -1,7 +1,8 @@
 # In models/transaction.py
-from app.models import db, BaseModel
 from datetime import datetime
 from decimal import Decimal
+
+from app.models import db, BaseModel
 
 
 class Transaction(db.Model, BaseModel):
@@ -36,19 +37,48 @@ class Transaction(db.Model, BaseModel):
         self.date = date if date else datetime.utcnow()
 
     def save(self):
-        """Save transaction and update account balance"""
+        """Save transaction and update related records"""
         try:
-            # First, ensure we have the account loaded
             if not self.account:
                 from app.models.account import Account
                 self.account = Account.query.get(self.account_id)
                 if not self.account:
                     raise ValueError(f"Account with ID {self.account_id} not found")
 
+            # Validate the user owns this account
+            if self.account.user_id != self.user_id:
+                raise ValueError("Account does not belong to this user")
+
+            # Begin transaction
+            db.session.begin_nested()
+
+            # Add transaction
             db.session.add(self)
+
+            # Update account balance
             self.account.update_balance(self.amount, self.transaction_type)
+
+            # Commit changes
+            db.session.commit()
+
+            # Invalidate any cached budget calculations
+            from app.models.budget import Budget
+            active_budgets = Budget.query.filter(
+                Budget.user_id == self.user_id,
+                Budget.category == self.category,
+                Budget.start_date <= self.date,
+                Budget.end_date >= self.date
+            ).all()
+
+            for budget in active_budgets:
+                if not budget.tag or budget.tag == self.tag:
+                    # Force budget recalculation by touching updated_at
+                    budget.updated_at = datetime.utcnow()
+                    db.session.add(budget)
+
             db.session.commit()
             return True
+
         except Exception as e:
             db.session.rollback()
             raise e

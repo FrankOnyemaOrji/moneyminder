@@ -45,6 +45,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         elements.modal.style.display = 'block';
+
+        // Focus on first input
+        setTimeout(() => {
+            elements.category?.focus();
+        }, 100);
     }
 
     function closeBudgetModal() {
@@ -55,11 +60,6 @@ document.addEventListener('DOMContentLoaded', function () {
             clearAllErrors();
         }
     }
-
-    // Make functions available globally
-    window.openBudgetModal = openBudgetModal;
-    window.closeBudgetModal = closeBudgetModal;
-    window.editBudget = openBudgetModal;
 
     // Event Listeners
     function attachEventListeners() {
@@ -76,12 +76,18 @@ document.addEventListener('DOMContentLoaded', function () {
         elements.amount?.addEventListener('blur', formatAmount);
         elements.form?.addEventListener('submit', handleBudgetSubmit);
 
+        // Add keyboard navigation
+        elements.modal?.addEventListener('keydown', handleModalKeyboard);
+
         // Modal close handlers
         window.addEventListener('click', (event) => {
             if (event.target === elements.modal) {
                 closeBudgetModal();
             }
         });
+
+        // Setup refresh functionality
+        setupRefresh();
 
         window.addEventListener('keydown', (event) => {
             if (event.key === 'Escape' && elements.modal?.style.display === 'block') {
@@ -90,8 +96,63 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Keyboard Navigation
+    function handleModalKeyboard(event) {
+        if (event.key === 'Escape') {
+            closeBudgetModal();
+        } else if (event.key === 'Enter' && event.ctrlKey) {
+            elements.form?.requestSubmit();
+        }
+    }
+
+    // Refresh Functionality
+    function setupRefresh() {
+        // Auto refresh budgets every 30 seconds
+        setInterval(refreshBudgets, 30000);
+
+        // Add manual refresh button if it exists
+        const refreshButton = document.querySelector('.refresh-budgets');
+        if (refreshButton) {
+            refreshButton.addEventListener('click', async (e) => {
+                e.preventDefault();
+                refreshButton.classList.add('rotating');
+                await refreshBudgets();
+                refreshButton.classList.remove('rotating');
+            });
+        }
+    }
+
+    async function refreshBudgets() {
+        const budgetCards = document.querySelectorAll('.budget-card');
+        budgetCards.forEach(card => {
+            card.classList.add('refreshing');
+        });
+
+        try {
+            const response = await fetch(window.location.href);
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            const newGrid = doc.querySelector('.budget-grid');
+            const currentGrid = document.querySelector('.budget-grid');
+
+            if (newGrid && currentGrid) {
+                currentGrid.innerHTML = newGrid.innerHTML;
+            }
+
+        } catch (error) {
+            console.error('Error refreshing budgets:', error);
+            showError('Failed to refresh budgets');
+        } finally {
+            budgetCards.forEach(card => {
+                card.classList.remove('refreshing');
+            });
+        }
+    }
+
     // Budget deletion handler
-    window.deleteBudget = async function(budgetId) {
+    window.deleteBudget = async function (budgetId) {
         if (!confirm('Are you sure you want to delete this budget?')) {
             return;
         }
@@ -110,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             showSuccess('Budget deleted successfully!');
-            setTimeout(() => window.location.reload(), 1500);
+            await refreshBudgets();
         } catch (error) {
             console.error('Error:', error);
             showError('Failed to delete budget. Please try again.');
@@ -130,6 +191,14 @@ document.addEventListener('DOMContentLoaded', function () {
             showSubmitLoading();
 
             const jsonData = Object.fromEntries(formData.entries());
+
+            // Validate date range
+            const startDate = new Date(jsonData.start_date);
+            const endDate = new Date(jsonData.end_date);
+            if (endDate < startDate) {
+                throw new Error('End date must be after start date');
+            }
+
             const url = isEdit ? `/budgets/api/budgets/${budgetId}` : '/budgets/';
             const method = isEdit ? 'PUT' : 'POST';
 
@@ -148,7 +217,8 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             showSuccess(`Budget ${isEdit ? 'updated' : 'created'} successfully!`);
-            setTimeout(() => window.location.reload(), 1500);
+            closeBudgetModal();
+            await refreshBudgets();
 
         } catch (error) {
             console.error('Error:', error);
@@ -418,4 +488,11 @@ document.addEventListener('DOMContentLoaded', function () {
             elements.tag.value = '';
         }
     }
+
+    // Make functions available globally
+    window.openBudgetModal = openBudgetModal;
+    window.closeBudgetModal = closeBudgetModal;
+    window.editBudget = openBudgetModal;
+    window.deleteBudget = deleteBudget;
+    window.refreshBudgets = refreshBudgets;
 });

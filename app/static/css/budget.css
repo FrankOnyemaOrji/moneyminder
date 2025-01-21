@@ -1,6 +1,6 @@
-/* budget.css */
-
-/* Container */
+Updated Budget CSS
+    /* budget.css */
+    /* Container */
 .budget-container {
     padding: 1.5rem;
     max-width: 1200px;
@@ -61,7 +61,6 @@
     background-color: #e4e4e7;
 }
 
-/* Combined button styles for new and create buttons */
 .new-button, .create-budget-btn {
     display: inline-flex;
     align-items: center;
@@ -83,6 +82,25 @@
     background-color: #2563eb;
 }
 
+/* Refresh Button */
+.icon-button {
+    padding: 0.5rem;
+    border: none;
+    background: #f4f4f5;
+    color: #374151;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.icon-button:hover {
+    background-color: #e4e4e7;
+}
+
+.icon-button i {
+    font-size: 1rem;
+}
+
 /* SVG Icons */
 .back-icon, .plus-icon {
     width: 20px;
@@ -99,6 +117,39 @@
     margin-top: 1.5rem;
 }
 
+/* Animation */
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.rotating i {
+    animation: rotate 1s linear infinite;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Budget Grid and Cards */
+.budget-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
 /* Budget Card Styles */
 .budget-card {
     background-color: white;
@@ -106,7 +157,7 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     padding: 1.5rem;
     position: relative;
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
 }
 
 .budget-card:hover {
@@ -114,11 +165,89 @@
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
+.budget-card.refreshing {
+    opacity: 0.7;
+}
+
 .budget-header {
     display: flex;
     align-items: center;
     gap: 0.75rem;
     margin-bottom: 1.5rem;
+}
+
+
+/* Loading States */
+.budget-loading {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+}
+
+.refreshing .budget-loading {
+    display: flex;
+}
+
+.spinner {
+    width: 2rem;
+    height: 2rem;
+    border: 3px solid #f3f4f6;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: rotate 1s linear infinite;
+}
+
+/* Toast Notifications */
+.toast {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    z-index: 1000;
+    max-width: 24rem;
+    animation: slideIn 0.3s ease-out;
+}
+
+.toast-success {
+    border-left: 4px solid #10b981;
+}
+
+.toast-error {
+    border-left: 4px solid #ef4444;
+}
+
+/* Keyboard Shortcuts */
+.keyboard-hint {
+    position: absolute;
+    bottom: 0.5rem;
+    right: 0.5rem;
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+/* Focus Styles */
+.form-control:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
 }
 
 .budget-header i {
@@ -246,7 +375,7 @@
     max-height: calc(100vh - 4rem);
     overflow-y: auto;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-                0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 /* Modal Header */
@@ -387,5 +516,11 @@
     .modal-content {
         margin: 1rem;
         max-width: calc(100% - 2rem);
+    }
+
+    .toast {
+        left: 1rem;
+        right: 1rem;
+        max-width: none;
     }
 }

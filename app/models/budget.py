@@ -2,30 +2,24 @@ from app.models import db, BaseModel
 from datetime import datetime
 from decimal import Decimal
 from app.models.category import Category
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Budget(db.Model, BaseModel):
-    """
-    Budget Model for setting spending limits per category
-    """
+    """Budget Model for setting spending limits per category"""
     __tablename__ = 'budgets'
 
     amount = db.Column(db.Numeric(10, 2), nullable=False)
     start_date = db.Column(db.DateTime, nullable=False)
     end_date = db.Column(db.DateTime, nullable=False)
-    notification_threshold = db.Column(db.Integer, default=80)  # Percentage
-
-    # Store category name directly instead of foreign key
+    notification_threshold = db.Column(db.Integer, default=80)
     category = db.Column(db.String(100), nullable=False)
-
-    # Optional: Store tag for more granular budgeting
     tag = db.Column(db.String(100), nullable=True)
-
-    # Foreign Keys
     user_id = db.Column(db.String(50), db.ForeignKey('users.id'), nullable=False)
 
-    def __init__(self, amount, category, user_id, start_date, end_date,
-                 tag=None, notification_threshold=80):
+    def __init__(self, amount, category, user_id, start_date, end_date, tag=None, notification_threshold=80):
         self.amount = Decimal(str(amount))
         self.category = category
         self.tag = tag
@@ -43,30 +37,43 @@ class Budget(db.Model, BaseModel):
     def get_spent_amount(self):
         """Calculate how much has been spent in this budget period"""
         from app.models.transaction import Transaction
-        query = db.session.query(db.func.sum(Transaction.amount)).filter(
-            Transaction.category == self.category,
-            Transaction.date >= self.start_date,
-            Transaction.date <= self.end_date,
-            Transaction.transaction_type == 'expense'
-        )
 
-        # Add tag filter if specified
-        if self.tag:
-            query = query.filter(Transaction.tag == self.tag)
+        try:
+            query = db.session.query(db.func.sum(Transaction.amount)).filter(
+                Transaction.user_id == self.user_id,
+                Transaction.category == self.category,
+                Transaction.date >= self.start_date,
+                Transaction.date <= self.end_date,
+                Transaction.transaction_type == 'expense'
+            )
 
-        spent = query.scalar() or 0
-        return Decimal(str(spent))
+            if self.tag:
+                query = query.filter(Transaction.tag == self.tag)
+
+            # Log query for debugging
+            logger.debug(f"Budget query for {self.category}: {str(query)}")
+
+            spent = query.scalar() or Decimal('0')
+            return Decimal(str(spent))
+
+        except Exception as e:
+            logger.error(f"Error calculating spent amount for budget {self.id}: {str(e)}")
+            return Decimal('0')
 
     def get_remaining_amount(self):
         """Calculate remaining budget"""
-        return self.amount - self.get_spent_amount()
+        spent = self.get_spent_amount()
+        remaining = self.amount - spent
+        return remaining
 
     def get_spending_percentage(self):
         """Calculate what percentage of budget has been spent"""
+        if self.amount <= 0:
+            return Decimal('0')
+
         spent = self.get_spent_amount()
-        if self.amount > 0:
-            return (spent / self.amount) * 100
-        return 0
+        percentage = (spent / self.amount * 100)
+        return percentage.quantize(Decimal('0.01'))
 
     def is_exceeded(self):
         """Check if budget has been exceeded"""
@@ -74,43 +81,60 @@ class Budget(db.Model, BaseModel):
 
     def should_notify(self):
         """Check if user should be notified based on threshold"""
-        spending_percentage = self.get_spending_percentage()
-        return spending_percentage >= self.notification_threshold
+        percentage = self.get_spending_percentage()
+        return percentage >= self.notification_threshold
 
     def get_category_details(self):
         """Get category color and icon"""
         return Category.get_category_details(self.category)
 
     def to_dict(self):
-        category_details = self.get_category_details()
-        return {
-            'id': self.id,
-            'amount': float(self.amount),
-            'start_date': self.start_date.strftime('%Y-%m-%d'),  # Format date here
-            'end_date': self.end_date.strftime('%Y-%m-%d'),  # Format date here
-            'category': self.category,
-            'category_icon': category_details['icon'],
-            'category_color': category_details['color'],
-            'tag': self.tag,
-            'notification_threshold': self.notification_threshold,
-            'spent_amount': float(self.get_spent_amount()),
-            'remaining_amount': float(self.get_remaining_amount()),
-            'spending_percentage': float(self.get_spending_percentage()),
-            'is_exceeded': self.is_exceeded(),
-            'created_at': self.created_at.isoformat(),
-            'updated_at': self.updated_at.isoformat()
-        }
+        """Convert budget to dictionary with calculated values"""
+        try:
+            category_details = self.get_category_details()
+            spent = self.get_spent_amount()
+            remaining = self.get_remaining_amount()
+            percentage = self.get_spending_percentage()
+
+            return {
+                'id': self.id,
+                'amount': float(self.amount),
+                'start_date': self.start_date.strftime('%Y-%m-%d'),
+                'end_date': self.end_date.strftime('%Y-%m-%d'),
+                'category': self.category,
+                'category_icon': category_details['icon'],
+                'category_color': category_details['color'],
+                'tag': self.tag,
+                'notification_threshold': self.notification_threshold,
+                'spent_amount': float(spent),
+                'remaining_amount': float(remaining),
+                'spending_percentage': float(percentage),
+                'is_exceeded': self.is_exceeded(),
+                'created_at': self.created_at.isoformat(),
+                'updated_at': self.updated_at.isoformat()
+            }
+        except Exception as e:
+            logger.error(f"Error converting budget {self.id} to dict: {str(e)}")
+            raise
 
     @staticmethod
     def get_active_budgets(user_id, date=None):
         """Get all active budgets for a specific date"""
         if date is None:
             date = datetime.utcnow()
-        return Budget.query.filter(
-            Budget.user_id == user_id,
-            Budget.start_date <= date,
-            Budget.end_date >= date
-        ).all()
+
+        try:
+            budgets = Budget.query.filter(
+                Budget.user_id == user_id,
+                Budget.start_date <= date,
+                Budget.end_date >= date
+            ).all()
+
+            return budgets
+
+        except Exception as e:
+            logger.error(f"Error fetching active budgets: {str(e)}")
+            return []
 
     @staticmethod
     def validate_budget_data(category, tag=None):
@@ -128,7 +152,6 @@ class Budget(db.Model, BaseModel):
                       tag=None, notification_threshold=80):
         """Create a new budget with validation"""
         cls.validate_budget_data(category, tag)
-
         budget = cls(
             amount=amount,
             category=category,
@@ -138,7 +161,6 @@ class Budget(db.Model, BaseModel):
             tag=tag,
             notification_threshold=notification_threshold
         )
-
         db.session.add(budget)
         db.session.commit()
         return budget

@@ -8,29 +8,23 @@
 {% endblock %}
 
 {% block content %}
-
     <div class="budget-container">
-        <!-- Updated Header Area -->
+        <!-- Header Area -->
         <div class="page-title">
             <div>
                 <h1>Budgets</h1>
                 <p class="subtitle">Manage your spending limits and track expenses by category</p>
             </div>
             <div class="action-buttons">
+                <button class="icon-button refresh-budgets" title="Refresh Budgets">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
                 <a href="{{ url_for('main.index') }}" class="back-button">
-                    <svg class="back-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20"
-                         height="20">
-                        <path d="M15 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                              stroke-linejoin="round"/>
-                    </svg>
+                    <i class="fas fa-arrow-left"></i>
                     Back to Dashboard
                 </a>
                 <button class="new-button create-budget-btn">
-                    <svg class="plus-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20"
-                         height="20">
-                        <path d="M12 6v12M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                              stroke-linejoin="round"/>
-                    </svg>
+                    <i class="fas fa-plus"></i>
                     New Budget
                 </button>
             </div>
@@ -39,7 +33,10 @@
         <!-- Budget Grid -->
         <div class="budget-grid">
             {% for budget in budgets %}
-                <div class="budget-card" style="border-left: 4px solid {{ budget.category_color }}">
+                <div class="budget-card"
+                     data-budget-id="{{ budget.id }}"
+                     data-category="{{ budget.category }}"
+                     style="border-left: 4px solid {{ budget.category_color }}">
                     <div class="budget-header">
                         <i class="fas fa-{{ budget.category_icon }}" style="color: {{ budget.category_color }}"></i>
                         <h3>{{ budget.category }}</h3>
@@ -61,22 +58,27 @@
                         <div class="budget-amounts">
                             <div class="amount-item">
                                 <span class="label">Spent</span>
-                                <span class="value">${{ "%.2f"|format(budget.spent_amount) }}</span>
+                                <span class="value spent-amount">${{ "%.2f"|format(budget.spent_amount) }}</span>
                             </div>
                             <div class="amount-item">
                                 <span class="label">Remaining</span>
-                                <span class="value {% if budget.is_exceeded %}text-danger{% endif %}">
-                            ${{ "%.2f"|format(budget.remaining_amount) }}
-                        </span>
+                                <span class="value remaining-amount {% if budget.is_exceeded %}text-danger{% endif %}">
+                                    ${{ "%.2f"|format(budget.remaining_amount) }}
+                                </span>
                             </div>
                             <div class="amount-item">
                                 <span class="label">Total</span>
-                                <span class="value">${{ "%.2f"|format(budget.amount) }}</span>
+                                <span class="value total-amount">${{ "%.2f"|format(budget.amount) }}</span>
                             </div>
                         </div>
 
                         <div class="budget-period">
-                            <span>{{ budget.start_date.split('T')[0] }} - {{ budget.end_date.split('T')[0] }}</span>
+                            <span>{{ budget.start_date }} - {{ budget.end_date }}</span>
+                        </div>
+
+                        <!-- Loading State -->
+                        <div class="budget-loading">
+                            <div class="spinner"></div>
                         </div>
                     </div>
 
@@ -100,11 +102,7 @@
                     <h3>No Budgets Found</h3>
                     <p>Start by creating your first budget to track your spending.</p>
                     <button class="new-button create-budget-btn">
-                        <svg class="plus-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
-                             width="20" height="20">
-                            <path d="M12 6v12M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                  stroke-linejoin="round"/>
-                        </svg>
+                        <i class="fas fa-plus"></i>
                         Create Budget
                     </button>
                 </div>
@@ -195,6 +193,11 @@
                             <i class="fas fa-save"></i>
                             Save Budget
                         </button>
+                    </div>
+
+                    <!-- Keyboard Shortcuts Hint -->
+                    <div class="keyboard-hint">
+                        Press Esc to close | Ctrl+Enter to save
                     </div>
                 </form>
             </div>
