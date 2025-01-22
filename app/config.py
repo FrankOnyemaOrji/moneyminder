@@ -37,3 +37,10 @@ class ProductionConfig(Config):
     # Configure proper logging
     import logging
     logging.basicConfig(level=logging.INFO)
+
+
+class TestingConfig(Config):
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///test_walletapp.db'
+    WTF_CSRF_ENABLED = False  # Disable CSRF in testing
+

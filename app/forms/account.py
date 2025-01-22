@@ -50,7 +50,8 @@ class AccountEditForm(AccountForm):
     def __init__(self, *args, **kwargs):
         super(AccountEditForm, self).__init__(*args, **kwargs)
         # Remove initial balance field as it shouldn't be edited after creation
-        del self.initial_balance
+        if 'initial_balance' in self:
+            del self.initial_balance
 
 
 class AccountDeleteForm(NoCSRFForm):
